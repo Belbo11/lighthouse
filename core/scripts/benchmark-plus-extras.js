@@ -11,7 +11,7 @@
 
 /* global document */
 
-import puppeteer from 'puppeteer-core';
+import * as puppeteer from 'puppeteer-core';
 import {getChromePath} from 'chrome-launcher';
 
 import {pageFunctions} from '../lib/page-functions.js';

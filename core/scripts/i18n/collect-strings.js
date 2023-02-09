@@ -18,7 +18,7 @@ import MessageParser from 'intl-messageformat-parser';
 import esMain from 'es-main';
 import isDeepEqual from 'lodash/isEqual.js';
 
-import {Util} from '../../util.cjs';
+import {Util} from '../../../shared/util.js';
 import {collectAndBakeCtcStrings} from './bake-ctc-to-lhl.js';
 import {pruneObsoleteLhlMessages} from './prune-obsolete-lhl-messages.js';
 import {countTranslatedMessages} from './count-translated.js';
@@ -714,6 +714,8 @@ function checkKnownFixedCollisions(strings) {
       'Consider uploading your GIF to a service which will make it available to embed as an HTML5 video.',
       'Consider uploading your GIF to a service which will make it available to embed as an HTML5 video.',
       'Consider uploading your GIF to a service which will make it available to embed as an HTML5 video.',
+      'Document contains a $MARKDOWN_SNIPPET_0$ that triggers $MARKDOWN_SNIPPET_1$',
+      'Document contains a $MARKDOWN_SNIPPET_0$ that triggers $MARKDOWN_SNIPPET_1$',
       'Document has a valid $MARKDOWN_SNIPPET_0$',
       'Document has a valid $MARKDOWN_SNIPPET_0$',
       'Failing Elements',

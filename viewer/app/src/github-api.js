@@ -13,7 +13,7 @@ import idbKeyval from 'idb-keyval';
 import {FirebaseAuth} from './firebase-auth.js';
 // eslint-disable-next-line max-len
 import {getLhrFilenamePrefix, getFlowResultFilenamePrefix} from '../../../report/generator/file-namer.js';
-import {Util} from '../../../report/renderer/util.js';
+import {Util} from '../../../shared/util.js';
 
 /**
  * Wrapper around the GitHub API for reading/writing gists.

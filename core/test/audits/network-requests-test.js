@@ -27,8 +27,9 @@ describe('Network requests audit', () => {
     const output = await NetworkRequests.audit(artifacts, {computedCache: new Map()});
 
     expect(output.details.items[0]).toMatchObject({
-      startTime: 0,
-      endTime: expect.toBeApproximately(701, 0),
+      rendererStartTime: 0,
+      networkRequestTime: expect.toBeApproximately(1, 0),
+      networkEndTime: expect.toBeApproximately(702, 0),
       finished: true,
       transferSize: 11358,
       resourceSize: 39471,
@@ -38,8 +39,9 @@ describe('Network requests audit', () => {
       priority: 'VeryHigh',
     });
     expect(output.details.items[2]).toMatchObject({
-      startTime: expect.toBeApproximately(711, 0),
-      endTime: expect.toBeApproximately(1289, 0),
+      rendererStartTime: expect.toBeApproximately(710, 0),
+      networkRequestTime: expect.toBeApproximately(712, 0),
+      networkEndTime: expect.toBeApproximately(1289, 0),
       finished: false,
       transferSize: 26441,
       resourceSize: 0,
@@ -49,8 +51,9 @@ describe('Network requests audit', () => {
       priority: 'Low',
     });
     expect(output.details.items[5]).toMatchObject({
-      startTime: expect.toBeApproximately(717, 0),
-      endTime: expect.toBeApproximately(1296, 0),
+      rendererStartTime: expect.toBeApproximately(713, 0),
+      networkRequestTime: expect.toBeApproximately(717, 0),
+      networkEndTime: expect.toBeApproximately(1297, 0),
       finished: false,
       transferSize: 58571,
       resourceSize: 0,
@@ -62,14 +65,14 @@ describe('Network requests audit', () => {
 
     expect(output.details.debugData).toStrictEqual({
       type: 'debugdata',
-      networkStartTimeTs: 360725781425,
+      networkStartTimeTs: 360725780729,
     });
   });
 
   it('should handle times correctly', async () => {
     const records = [
-      {url: 'https://example.com/0', startTime: 15.0, endTime: 15.5},
-      {url: 'https://example.com/1', startTime: 15.5, endTime: -1},
+      {url: 'https://example.com/0', rendererStartTime: 14, networkRequestTime: 15.0, networkEndTime: 15.5},
+      {url: 'https://example.com/1', rendererStartTime: 14, networkRequestTime: 15.5, networkEndTime: -1},
     ];
 
     const artifacts = {
@@ -82,12 +85,14 @@ describe('Network requests audit', () => {
     const output = await NetworkRequests.audit(artifacts, {computedCache: new Map()});
 
     expect(output.details.items).toMatchObject([{
-      startTime: 0,
-      endTime: 0.5,
+      rendererStartTime: 0,
+      networkRequestTime: 1,
+      networkEndTime: 1.5,
       finished: true,
     }, {
-      startTime: 0.5,
-      endTime: undefined,
+      rendererStartTime: 0,
+      networkRequestTime: 1.5,
+      networkEndTime: undefined,
       finished: true,
     }]);
   });

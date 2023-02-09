@@ -52,14 +52,13 @@ const throttling = {
 /**
  * @type {Required<LH.SharedFlagsSettings['screenEmulation']>}
  */
-const MOTOG4_EMULATION_METRICS = {
+const MOTOGPOWER_EMULATION_METRICS = {
   mobile: true,
-  width: 360,
-  height: 640,
-  // Moto G4 is really 3, but a higher value here works against
-  // our perf recommendations.
+  width: 412,
+  height: 823,
+  // This value has some interesting ramifications for image-size-responsive, see:
   // https://github.com/GoogleChrome/lighthouse/issues/10741#issuecomment-626903508
-  deviceScaleFactor: 2.625,
+  deviceScaleFactor: 1.75,
   disabled: false,
 };
 
@@ -76,13 +75,13 @@ const DESKTOP_EMULATION_METRICS = {
 };
 
 const screenEmulationMetrics = {
-  mobile: MOTOG4_EMULATION_METRICS,
+  mobile: MOTOGPOWER_EMULATION_METRICS,
   desktop: DESKTOP_EMULATION_METRICS,
 };
 
 
-const MOTOG4_USERAGENT = 'Mozilla/5.0 (Linux; Android 7.0; Moto G (4)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4695.0 Mobile Safari/537.36 Chrome-Lighthouse'; // eslint-disable-line max-len
-const DESKTOP_USERAGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4695.0 Safari/537.36 Chrome-Lighthouse'; // eslint-disable-line max-len
+const MOTOG4_USERAGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36'; // eslint-disable-line max-len
+const DESKTOP_USERAGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'; // eslint-disable-line max-len
 
 const userAgents = {
   mobile: MOTOG4_USERAGENT,
@@ -111,6 +110,7 @@ const defaultSettings = {
   debugNavigation: false,
   channel: 'node',
   usePassiveGathering: false,
+  disableFullPageScreenshot: false,
   skipAboutBlank: false,
   blankPage: 'about:blank',
 

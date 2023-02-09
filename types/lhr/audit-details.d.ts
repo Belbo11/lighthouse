@@ -4,8 +4,8 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
-import {IcuMessage} from './i18n';
-import Treemap from './treemap';
+import {IcuMessage} from './i18n.js';
+import Treemap from './treemap.js';
 
 type Details =
   Details.CriticalRequestChain |
@@ -15,7 +15,6 @@ type Details =
   Details.List |
   Details.Opportunity |
   Details.Screenshot |
-  Details.FullPageScreenshot |
   Details.Table;
 
 // Details namespace.
@@ -77,22 +76,6 @@ declare module Details {
     timing: number;
     timestamp: number;
     data: string;
-  }
-
-  /**
-   * A screenshot of the entire page, including width and height information,
-   * and the locations of interesting nodes.
-   * Used by element screenshots renderer.
-   */
-  interface FullPageScreenshot {
-    type: 'full-page-screenshot';
-    screenshot: {
-      /** Base64 image data URL. */
-      data: string;
-      width: number;
-      height: number;
-    };
-    nodes: Record<string, Rect>;
   }
 
   interface Rect {

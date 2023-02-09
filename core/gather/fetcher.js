@@ -4,6 +4,8 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
+import * as LH from '../../types/lh.js';
+
 /**
  * @fileoverview Fetcher is a utility for making requests to any arbitrary resource,
  * ignoring normal browser constraints such as CORS.

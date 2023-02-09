@@ -111,9 +111,10 @@ describe('NetworkRequest', () => {
   describe('update fetch stats for Lightrider', () => {
     function getRequest() {
       return {
-        startTime: 0,
-        endTime: 2000,
-        responseReceivedTime: 1000,
+        rendererStartTime: 0,
+        networkRequestTime: 50,
+        responseHeadersEndTime: 1000,
+        networkEndTime: 2000,
 
         // units = ms
         responseHeaders: [
@@ -133,11 +134,12 @@ describe('NetworkRequest', () => {
       global.isLightrider = true;
       const record = NetworkRecorder.recordsFromLogs(devtoolsLog)[0];
 
-      expect(record.startTime).toStrictEqual(0);
-      expect(record.endTime).toStrictEqual(2000);
-      expect(record.responseReceivedTime).toStrictEqual(1000);
+      expect(record.rendererStartTime).toStrictEqual(0);
+      expect(record.networkRequestTime).toStrictEqual(50);
+      expect(record.networkEndTime).toStrictEqual(2000);
+      expect(record.responseHeadersEndTime).toStrictEqual(1000);
       expect(record.lrStatistics).toStrictEqual({
-        endTimeDeltaMs: -8000,
+        endTimeDeltaMs: -8050,
         TCPMs: 5000,
         requestMs: 2500,
         responseMs: 2500,
@@ -226,7 +228,7 @@ describe('NetworkRequest', () => {
       const record = NetworkRecorder.recordsFromLogs(devtoolsLog)[0];
 
       expect(record.lrStatistics).toStrictEqual({
-        endTimeDeltaMs: -8000,
+        endTimeDeltaMs: -8050,
         TCPMs: 0,
         requestMs: 0,
         responseMs: 10000,
@@ -244,7 +246,7 @@ describe('NetworkRequest', () => {
       const record = NetworkRecorder.recordsFromLogs(devtoolsLog)[0];
 
       expect(record.lrStatistics).toStrictEqual({
-        endTimeDeltaMs: -8000,
+        endTimeDeltaMs: -8050,
         TCPMs: 1000,
         requestMs: 0,
         responseMs: 9000,
@@ -268,7 +270,7 @@ describe('NetworkRequest', () => {
         sslStart: 35,
       });
       expect(lrRecord.lrStatistics).toStrictEqual({
-        endTimeDeltaMs: -8000,
+        endTimeDeltaMs: -8050,
         TCPMs: 5000,
         requestMs: 2500,
         responseMs: 2500,

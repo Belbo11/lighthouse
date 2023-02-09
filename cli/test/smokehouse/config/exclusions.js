@@ -28,4 +28,9 @@ const exclusions = {
   ],
 };
 
+// https://github.com/GoogleChrome/lighthouse/issues/14271
+for (const array of Object.values(exclusions)) {
+  array.push('lantern-idle-callback-short');
+}
+
 export default exclusions;

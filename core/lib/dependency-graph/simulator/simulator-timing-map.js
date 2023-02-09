@@ -16,8 +16,8 @@ import {BaseNode} from '../base-node.js';
 
 
 /** @typedef {import('../base-node.js').Node} Node */
-/** @typedef {import('../network-node').NetworkNode} NetworkNode */
-/** @typedef {import('../cpu-node').CPUNode} CpuNode */
+/** @typedef {import('../network-node.js').NetworkNode} NetworkNode */
+/** @typedef {import('../cpu-node.js').CPUNode} CpuNode */
 
 /**
  * @typedef NodeTimingComplete

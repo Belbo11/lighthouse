@@ -5,12 +5,9 @@
  */
 
 export default {
-  passes: [{
-    passName: 'defaultPass',
-    gatherers: [
-      'custom-gatherer',
-    ],
-  }],
+  artifacts: [
+    {id: 'CustomGatherer', gatherer: 'custom-gatherer'},
+  ],
 
   audits: [
     'custom-audit',

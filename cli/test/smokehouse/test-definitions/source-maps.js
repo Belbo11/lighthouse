@@ -8,7 +8,7 @@ import fs from 'fs';
 
 import {LH_ROOT} from '../../../../root.js';
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   settings: {

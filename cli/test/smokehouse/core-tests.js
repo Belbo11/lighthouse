@@ -15,6 +15,7 @@ import errorsIframeExpiredSsl from './test-definitions/errors-iframe-expired-ssl
 import errorsInfiniteLoop from './test-definitions/errors-infinite-loop.js';
 import formsAutoComplete from './test-definitions/forms-autocomplete.js';
 import fpsMax from './test-definitions/fps-max.js';
+import fpsMaxPassive from './test-definitions/fps-max-passive.js';
 import fpsScaled from './test-definitions/fps-scaled.js';
 import issuesMixedContent from './test-definitions/issues-mixed-content.js';
 import lanternFetch from './test-definitions/lantern-fetch.js';
@@ -79,6 +80,7 @@ const smokeTests = [
   formsAutoComplete,
   fpsMax,
   fpsScaled,
+  fpsMaxPassive,
   issuesMixedContent,
   lanternFetch,
   lanternIdleCallbackLong,

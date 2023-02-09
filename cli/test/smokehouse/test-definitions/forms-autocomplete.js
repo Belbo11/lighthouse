@@ -7,7 +7,7 @@
 import experimentalConfig from '../../../../core/config/experimental-config.js';
 
 /**
- * @type {LH.Config.Json}
+ * @type {LH.Config}
  */
 const config = {
   ...experimentalConfig,

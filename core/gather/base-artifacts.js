@@ -39,10 +39,7 @@ async function getBaseArtifacts(resolvedConfig, driver, context) {
     PageLoadError: null,
     GatherContext: context,
     // Artifacts that have been replaced by regular gatherers in Fraggle Rock.
-    Stacks: [],
     NetworkUserAgent: '',
-    WebAppManifest: null,
-    InstallabilityErrors: {errors: []},
     traces: {},
     devtoolsLogs: {},
   };

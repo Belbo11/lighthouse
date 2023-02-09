@@ -32,11 +32,11 @@ function parseUseragentIntoMetadata(userAgent, formFactor) {
     {brand: 'Lighthouse', version: lighthouseVersion},
   ];
 
-  const motoG4Details = {
+  const motoGPowerDetails = {
     platform: 'Android',
-    platformVersion: '6.0',
+    platformVersion: '11.0',
     architecture: '',
-    model: 'Moto G4',
+    model: 'moto g power (2022)',
   };
   const macDesktopDetails = {
     platform: 'macOS',
@@ -50,9 +50,9 @@ function parseUseragentIntoMetadata(userAgent, formFactor) {
     brands,
     fullVersion,
     // Since config users can supply a custom useragent, they likely are emulating something
-    // other than Moto G4 and MacOS Desktop.
+    // other than Moto G Power and MacOS Desktop.
     // TODO: Determine how to thoughtfully expose this metadata/client-hints configurability.
-    ...(mobile ? motoG4Details : macDesktopDetails),
+    ...(mobile ? motoGPowerDetails : macDesktopDetails),
     mobile,
   };
 }

@@ -8,6 +8,7 @@ import {EventEmitter} from 'events';
 
 import log from 'lighthouse-logger';
 
+import * as LH from '../../../../types/lh.js';
 import {LighthouseError} from '../../../lib/lh-error.js';
 
 // TODO(bckenny): CommandCallback properties should be tied by command type after

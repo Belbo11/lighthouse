@@ -6,7 +6,7 @@
 
 /**
  * Config file for sites with various errors, just fail out quickly.
- * @type {LH.Config.Json}
+ * @type {LH.Config}
  */
 const config = {
   extends: 'lighthouse:default',

@@ -5,7 +5,7 @@
  */
 
 import {before, beforeEach, after, afterEach} from 'mocha';
-import puppeteer from 'puppeteer-core';
+import * as puppeteer from 'puppeteer-core';
 import {getChromePath} from 'chrome-launcher';
 
 import {Server} from '../../../cli/test/fixtures/static-server.js';

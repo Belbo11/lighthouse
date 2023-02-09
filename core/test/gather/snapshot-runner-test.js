@@ -36,7 +36,7 @@ describe('Snapshot Runner', () => {
   let gathererA;
   /** @type {ReturnType<typeof createMockGathererInstance>} */
   let gathererB;
-  /** @type {LH.Config.Json} */
+  /** @type {LH.Config} */
   let config;
 
   beforeEach(() => {

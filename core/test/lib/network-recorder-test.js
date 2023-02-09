@@ -157,12 +157,12 @@ describe('network recorder', function() {
   });
 
   it('should ignore invalid `timing` data', () => {
-    const inputRecords = [{url: 'http://example.com', startTime: 1, endTime: 2}];
+    const inputRecords = [{url: 'http://example.com', networkRequestTime: 1, networkEndTime: 2}];
     const devtoolsLogs = networkRecordsToDevtoolsLog(inputRecords);
     const responseReceived = devtoolsLogs.find(item => item.method === 'Network.responseReceived');
     responseReceived.params.response.timing = {requestTime: 0, receiveHeadersEnd: -1};
     const records = NetworkRecorder.recordsFromLogs(devtoolsLogs);
-    expect(records).toMatchObject([{url: 'http://example.com', startTime: 1, endTime: 2}]);
+    expect(records).toMatchObject([{url: 'http://example.com', networkRequestTime: 1, networkEndTime: 2}]);
   });
 
   it('should use X-TotalFetchedSize in Lightrider for transferSize', () => {
@@ -218,7 +218,7 @@ describe('network recorder', function() {
 
     const [mainDocument, loaderPrefetch, _ /* favicon */, loaderScript, implScript] = records;
     expect(mainDocument.initiatorRequest).toBe(undefined);
-    expect(loaderPrefetch.startTime < loaderScript.startTime).toBe(true);
+    expect(loaderPrefetch.networkRequestTime < loaderScript.networkRequestTime).toBe(true);
     expect(loaderPrefetch.resourceType).toBe('Other');
     expect(loaderPrefetch.initiatorRequest).toBe(mainDocument);
     expect(loaderScript.resourceType).toBe('Script');
@@ -607,8 +607,92 @@ describe('network recorder', function() {
     expect(initiator1.initiatorRequest).toBe(undefined);
     expect(initiator2.frameId).toBe('2');
     expect(initiator2.initiatorRequest).toBe(undefined);
-    expect(initiator2.startTime > initiated.startTime).toBe(true);
+    expect(initiator2.networkRequestTime > initiated.networkRequestTime).toBe(true);
     expect(initiated.initiatorRequest).toBe(initiator1);
+  });
+
+  it('should look in async stack traces for initiators', () => {
+    const devtoolsLogs = networkRecordsToDevtoolsLog([
+      {
+        url: 'https://example.com/',
+        networkRequestTime: 10_000,
+      }, {
+        url: 'https://example.com/script.js',
+        networkRequestTime: 20_000,
+        initiator: {
+          type: 'parser',
+          url: 'https://example.com/',
+        },
+      },
+      {
+        url: 'https://example.com/img.png',
+        networkRequestTime: 30_000,
+        initiator: {
+          type: 'script',
+          stack: {
+            // Only async callFrames entries.
+            callFrames: [],
+            parent: {
+              description: 'Image',
+              callFrames: [{
+                functionName: 'apply',
+                scriptId: '23',
+                url: 'https://example.com/script.js',
+                lineNumber: 165,
+                columnNumber: 416,
+              }, {
+                functionName: 'Cu',
+                scriptId: '78',
+                url: 'https://example.com/',
+                lineNumber: 0,
+                columnNumber: 91074,
+              }],
+            },
+          },
+        },
+      },
+    ]);
+
+    const records = NetworkRecorder.recordsFromLogs(devtoolsLogs);
+    expect(records).toHaveLength(3);
+
+    const [mainRequest, scriptRequest, imageRequest] = records;
+    expect(mainRequest.initiatorRequest).toBe(undefined);
+    expect(scriptRequest.initiatorRequest).toBe(mainRequest);
+    expect(imageRequest.initiatorRequest).toBe(scriptRequest);
+  });
+
+  it('should follow a successful preload for the initiator path', () => {
+    const devtoolsLogs = networkRecordsToDevtoolsLog([
+      {
+        url: 'https://example.com/',
+        networkRequestTime: 10_000,
+      }, {
+        url: 'https://example.com/script.js',
+        networkRequestTime: 20_000,
+        isLinkPreload: true,
+        initiator: {type: 'parser', url: 'https://example.com/'},
+      }, {
+        url: 'https://example.com/script.js',
+        networkRequestTime: 30_000,
+        fromDiskCache: true,
+        initiator: {type: 'parser', url: 'https://example.com/'},
+      },
+      {
+        url: 'https://example.com/img.png',
+        networkRequestTime: 40_000,
+        initiator: {type: 'script', url: 'https://example.com/script.js'},
+      },
+    ]);
+
+    const records = NetworkRecorder.recordsFromLogs(devtoolsLogs);
+    expect(records).toHaveLength(4);
+
+    const [mainRequest, preloadRequest, scriptRequest, imageRequest] = records;
+    expect(mainRequest.initiatorRequest).toBe(undefined);
+    expect(preloadRequest.initiatorRequest).toBe(mainRequest);
+    expect(scriptRequest.initiatorRequest).toBe(mainRequest);
+    expect(imageRequest.initiatorRequest).toBe(preloadRequest);
   });
 
   it('should not set initiator when ambiguous', () => {

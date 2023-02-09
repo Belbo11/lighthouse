@@ -57,7 +57,7 @@ class JsLibrariesAudit extends Audit {
       {key: 'name', valueType: 'text', label: str_(i18n.UIStrings.columnName)},
       {key: 'version', valueType: 'text', label: str_(UIStrings.columnVersion)},
     ];
-    const details = Audit.makeTableDetails(headings, libDetails, {});
+    const details = Audit.makeTableDetails(headings, libDetails);
 
     const debugData = {
       type: /** @type {const} */ ('debugdata'),

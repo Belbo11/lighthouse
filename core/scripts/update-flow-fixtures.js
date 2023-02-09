@@ -11,7 +11,7 @@ import assert from 'assert/strict';
 
 import open from 'open';
 import waitForExpect from 'wait-for-expect';
-import puppeteer from 'puppeteer-core';
+import * as puppeteer from 'puppeteer-core';
 import yargs from 'yargs';
 import {getChromePath} from 'chrome-launcher';
 import log from 'lighthouse-logger';
@@ -34,6 +34,7 @@ const args = yargs(process.argv.slice(2))
     },
     'rebaseline-artifacts': {
       type: 'array',
+      alias: 'a',
     },
     'output-path': {
       type: 'string',
@@ -71,7 +72,7 @@ async function waitForImagesToLoad(page) {
   }, TIMEOUT);
 }
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   settings: {

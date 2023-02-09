@@ -209,7 +209,7 @@ async function potentiallyKillChrome(launchedChrome) {
 /**
  * @param {string} url
  * @param {LH.CliFlags} flags
- * @param {LH.Config.Json|undefined} config
+ * @param {LH.Config|undefined} config
  * @return {Promise<LH.RunnerResult|undefined>}
  */
 async function runLighthouse(url, flags, config) {

@@ -87,8 +87,11 @@ class Responsiveness {
       return evt.name === 'EventTiming' && evt.ph !== 'e';
     });
 
-    if (candidates.length && !candidates.some(candidate => candidate.args.data?.frame)) {
-      // Full EventTiming data added in https://crrev.com/c/3632661
+    // If trace is from < m103, the timestamps cannot be trusted, so we craft a fallback
+    // <m103 traces (bad) had a   args.frame
+    // m103+ traces (good) have a args.data.frame (https://crrev.com/c/3632661)
+    // TODO(compat): remove FallbackTiming handling when we don't care about <m103
+    if (candidates.length && candidates.every(candidate => !candidate.args.data?.frame)) {
       return {
         name: 'FallbackTiming',
         duration: responsivenessEvent.args.data.maxDuration,

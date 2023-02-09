@@ -33,8 +33,10 @@ describe('lightrider-entry', () => {
 
       const result = await runLighthouseInLR(mockConnection, url, {output}, {});
       const parsedResult = JSON.parse(result);
-      assert.strictEqual(parsedResult.runtimeError.code, connectionError.code);
-      assert.ok(parsedResult.runtimeError.message.includes(connectionError.friendlyMessage));
+      expect(parsedResult.runtimeError).toMatchObject({
+        code: connectionError.code,
+        message: expect.stringContaining(connectionError.message),
+      });
     });
 
     it('returns an unknown-runtimeError LHR when lighthouse throws an unknown error', async () => {

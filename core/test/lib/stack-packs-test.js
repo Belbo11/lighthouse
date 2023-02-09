@@ -39,6 +39,7 @@ Array [
   "octobercms",
   "react",
   "wordpress",
+  "wp-rocket",
 ]
 `);
   });
@@ -159,7 +160,7 @@ Array [
       "uses-text-compression",
       "uses-responsive-images",
       "user-timings",
-      "preload-lcp-image",
+      "prioritize-lcp-image",
       "unsized-images",
     ],
   },
@@ -170,7 +171,7 @@ Array [
       "offscreen-images",
       "uses-optimized-images",
       "uses-responsive-images",
-      "preload-lcp-image",
+      "prioritize-lcp-image",
       "unsized-images",
     ],
   },
@@ -222,6 +223,21 @@ Array [
       "uses-text-compression",
       "uses-responsive-images",
       "server-response-time",
+    ],
+  },
+  Object {
+    "id": "wp-rocket",
+    "keys": Array [
+      "unused-css-rules",
+      "modern-image-formats",
+      "unused-javascript",
+      "render-blocking-resources",
+      "unminified-css",
+      "unminified-javascript",
+      "uses-optimized-images",
+      "uses-rel-preconnect",
+      "uses-rel-preload",
+      "offscreen-images",
     ],
   },
 ]

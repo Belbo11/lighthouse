@@ -70,7 +70,7 @@ class Metric {
 
     const processedTrace = await ProcessedTrace.request(trace, context);
     const processedNavigation = gatherContext.gatherMode === 'timespan' ?
-      undefined : await ProcessedNavigation.request(processedTrace, context);
+      undefined : await ProcessedNavigation.request(trace, context);
 
     const augmentedData = Object.assign({
       networkRecords: await NetworkRecords.request(devtoolsLog, context),

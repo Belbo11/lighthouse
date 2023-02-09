@@ -6,6 +6,7 @@
 
 /* eslint-disable max-len */
 
+import * as LH from '../../types/lh.js';
 import * as constants from './constants.js';
 import * as i18n from '../lib/i18n/i18n.js';
 import {metricsToAudits} from './metrics-to-audits.js';
@@ -121,107 +122,57 @@ const UIStrings = {
 
 const str_ = i18n.createIcuMessageFn(import.meta.url, UIStrings);
 
-// Ensure all artifact IDs match the typedefs.
-/** @type {Record<keyof LH.FRArtifacts, string>} */
-const artifacts = {
-  DevtoolsLog: '',
-  Trace: '',
-  Accessibility: '',
-  AnchorElements: '',
-  BFCacheFailures: '',
-  CacheContents: '',
-  ConsoleMessages: '',
-  CSSUsage: '',
-  Doctype: '',
-  DOMStats: '',
-  EmbeddedContent: '',
-  FontSize: '',
-  Inputs: '',
-  FullPageScreenshot: '',
-  GlobalListeners: '',
-  IFrameElements: '',
-  ImageElements: '',
-  InstallabilityErrors: '',
-  InspectorIssues: '',
-  JsUsage: '',
-  LinkElements: '',
-  MainDocumentContent: '',
-  MetaElements: '',
-  NetworkUserAgent: '',
-  OptimizedImages: '',
-  PasswordInputsWithPreventedPaste: '',
-  ResponseCompression: '',
-  RobotsTxt: '',
-  ServiceWorker: '',
-  ScriptElements: '',
-  Scripts: '',
-  SourceMaps: '',
-  Stacks: '',
-  TagsBlockingFirstPaint: '',
-  TapTargets: '',
-  TraceElements: '',
-  ViewportDimensions: '',
-  WebAppManifest: '',
-  devtoolsLogs: '',
-  traces: '',
-};
-
-for (const key of Object.keys(artifacts)) {
-  artifacts[/** @type {keyof typeof artifacts} */ (key)] = key;
-}
-
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const defaultConfig = {
   settings: constants.defaultSettings,
   artifacts: [
     // Artifacts which can be depended on come first.
-    {id: artifacts.DevtoolsLog, gatherer: 'devtools-log'},
-    {id: artifacts.Trace, gatherer: 'trace'},
+    {id: 'DevtoolsLog', gatherer: 'devtools-log'},
+    {id: 'Trace', gatherer: 'trace'},
 
-    {id: artifacts.Accessibility, gatherer: 'accessibility'},
-    {id: artifacts.AnchorElements, gatherer: 'anchor-elements'},
-    {id: artifacts.CacheContents, gatherer: 'cache-contents'},
-    {id: artifacts.ConsoleMessages, gatherer: 'console-messages'},
-    {id: artifacts.CSSUsage, gatherer: 'css-usage'},
-    {id: artifacts.Doctype, gatherer: 'dobetterweb/doctype'},
-    {id: artifacts.DOMStats, gatherer: 'dobetterweb/domstats'},
-    {id: artifacts.EmbeddedContent, gatherer: 'seo/embedded-content'},
-    {id: artifacts.FontSize, gatherer: 'seo/font-size'},
-    {id: artifacts.Inputs, gatherer: 'inputs'},
-    {id: artifacts.GlobalListeners, gatherer: 'global-listeners'},
-    {id: artifacts.IFrameElements, gatherer: 'iframe-elements'},
-    {id: artifacts.ImageElements, gatherer: 'image-elements'},
-    {id: artifacts.InstallabilityErrors, gatherer: 'installability-errors'},
-    {id: artifacts.InspectorIssues, gatherer: 'inspector-issues'},
-    {id: artifacts.JsUsage, gatherer: 'js-usage'},
-    {id: artifacts.LinkElements, gatherer: 'link-elements'},
-    {id: artifacts.MainDocumentContent, gatherer: 'main-document-content'},
-    {id: artifacts.MetaElements, gatherer: 'meta-elements'},
-    {id: artifacts.NetworkUserAgent, gatherer: 'network-user-agent'},
-    {id: artifacts.OptimizedImages, gatherer: 'dobetterweb/optimized-images'},
-    {id: artifacts.PasswordInputsWithPreventedPaste, gatherer: 'dobetterweb/password-inputs-with-prevented-paste'},
-    {id: artifacts.ResponseCompression, gatherer: 'dobetterweb/response-compression'},
-    {id: artifacts.RobotsTxt, gatherer: 'seo/robots-txt'},
-    {id: artifacts.ServiceWorker, gatherer: 'service-worker'},
-    {id: artifacts.ScriptElements, gatherer: 'script-elements'},
-    {id: artifacts.Scripts, gatherer: 'scripts'},
-    {id: artifacts.SourceMaps, gatherer: 'source-maps'},
-    {id: artifacts.Stacks, gatherer: 'stacks'},
-    {id: artifacts.TagsBlockingFirstPaint, gatherer: 'dobetterweb/tags-blocking-first-paint'},
-    {id: artifacts.TapTargets, gatherer: 'seo/tap-targets'},
-    {id: artifacts.TraceElements, gatherer: 'trace-elements'},
-    {id: artifacts.ViewportDimensions, gatherer: 'viewport-dimensions'},
-    {id: artifacts.WebAppManifest, gatherer: 'web-app-manifest'},
+    {id: 'Accessibility', gatherer: 'accessibility'},
+    {id: 'AnchorElements', gatherer: 'anchor-elements'},
+    {id: 'CacheContents', gatherer: 'cache-contents'},
+    {id: 'ConsoleMessages', gatherer: 'console-messages'},
+    {id: 'CSSUsage', gatherer: 'css-usage'},
+    {id: 'Doctype', gatherer: 'dobetterweb/doctype'},
+    {id: 'DOMStats', gatherer: 'dobetterweb/domstats'},
+    {id: 'EmbeddedContent', gatherer: 'seo/embedded-content'},
+    {id: 'FontSize', gatherer: 'seo/font-size'},
+    {id: 'Inputs', gatherer: 'inputs'},
+    {id: 'GlobalListeners', gatherer: 'global-listeners'},
+    {id: 'IFrameElements', gatherer: 'iframe-elements'},
+    {id: 'ImageElements', gatherer: 'image-elements'},
+    {id: 'InstallabilityErrors', gatherer: 'installability-errors'},
+    {id: 'InspectorIssues', gatherer: 'inspector-issues'},
+    {id: 'JsUsage', gatherer: 'js-usage'},
+    {id: 'LinkElements', gatherer: 'link-elements'},
+    {id: 'MainDocumentContent', gatherer: 'main-document-content'},
+    {id: 'MetaElements', gatherer: 'meta-elements'},
+    {id: 'NetworkUserAgent', gatherer: 'network-user-agent'},
+    {id: 'OptimizedImages', gatherer: 'dobetterweb/optimized-images'},
+    {id: 'ResponseCompression', gatherer: 'dobetterweb/response-compression'},
+    {id: 'RobotsTxt', gatherer: 'seo/robots-txt'},
+    {id: 'ServiceWorker', gatherer: 'service-worker'},
+    {id: 'ScriptElements', gatherer: 'script-elements'},
+    {id: 'Scripts', gatherer: 'scripts'},
+    {id: 'SourceMaps', gatherer: 'source-maps'},
+    {id: 'Stacks', gatherer: 'stacks'},
+    {id: 'TagsBlockingFirstPaint', gatherer: 'dobetterweb/tags-blocking-first-paint'},
+    {id: 'TapTargets', gatherer: 'seo/tap-targets'},
+    {id: 'TraceElements', gatherer: 'trace-elements'},
+    {id: 'ViewportDimensions', gatherer: 'viewport-dimensions'},
+    {id: 'WebAppManifest', gatherer: 'web-app-manifest'},
 
     // Artifact copies are renamed for compatibility with legacy artifacts.
-    {id: artifacts.devtoolsLogs, gatherer: 'devtools-log-compat'},
-    {id: artifacts.traces, gatherer: 'trace-compat'},
+    {id: 'devtoolsLogs', gatherer: 'devtools-log-compat'},
+    {id: 'traces', gatherer: 'trace-compat'},
 
     // FullPageScreenshot comes at the end so all other node analysis is captured.
-    {id: artifacts.FullPageScreenshot, gatherer: 'full-page-screenshot'},
+    {id: 'FullPageScreenshot', gatherer: 'full-page-screenshot'},
 
-    // BFCacheErrors comes at the very end because it can perform a page navigation.
-    {id: artifacts.BFCacheFailures, gatherer: 'bf-cache-failures'},
+    // BFCacheFailures comes at the very end because it can perform a page navigation.
+    {id: 'BFCacheFailures', gatherer: 'bf-cache-failures'},
   ],
   audits: [
     'is-on-https',
@@ -276,9 +227,8 @@ const defaultConfig = {
     'non-composited-animations',
     'unsized-images',
     'valid-source-maps',
-    'preload-lcp-image',
+    'prioritize-lcp-image',
     'csp-xss',
-    'full-page-screenshot',
     'script-treemap-data',
     'manual/pwa-cross-browser',
     'manual/pwa-page-transitions',
@@ -361,7 +311,7 @@ const defaultConfig = {
     'dobetterweb/no-document-write',
     'dobetterweb/js-libraries',
     'dobetterweb/notification-on-start',
-    'dobetterweb/password-inputs-can-be-pasted-into',
+    'dobetterweb/paste-preventing-inputs',
     'dobetterweb/uses-http2',
     'dobetterweb/uses-passive-event-listeners',
     'seo/meta-description',
@@ -466,14 +416,14 @@ const defaultConfig = {
       supportedModes: ['navigation', 'timespan', 'snapshot'],
       auditRefs: [
         {id: 'first-contentful-paint', weight: 10, group: 'metrics', acronym: 'FCP', relevantAudits: metricsToAudits.fcpRelevantAudits},
-        {id: 'interactive', weight: 10, group: 'metrics', acronym: 'TTI'},
-        {id: 'speed-index', weight: 10, group: 'metrics', acronym: 'SI'},
-        {id: 'total-blocking-time', weight: 30, group: 'metrics', acronym: 'TBT', relevantAudits: metricsToAudits.tbtRelevantAudits},
         {id: 'largest-contentful-paint', weight: 25, group: 'metrics', acronym: 'LCP', relevantAudits: metricsToAudits.lcpRelevantAudits},
-        {id: 'cumulative-layout-shift', weight: 15, group: 'metrics', acronym: 'CLS', relevantAudits: metricsToAudits.clsRelevantAudits},
+        {id: 'total-blocking-time', weight: 30, group: 'metrics', acronym: 'TBT', relevantAudits: metricsToAudits.tbtRelevantAudits},
+        {id: 'cumulative-layout-shift', weight: 25, group: 'metrics', acronym: 'CLS', relevantAudits: metricsToAudits.clsRelevantAudits},
+        {id: 'speed-index', weight: 10, group: 'metrics', acronym: 'SI'},
         {id: 'experimental-interaction-to-next-paint', weight: 0, group: 'metrics', acronym: 'INP', relevantAudits: metricsToAudits.inpRelevantAudits},
 
         // These are our "invisible" metrics. Not displayed, but still in the LHR.
+        {id: 'interactive', weight: 0, group: 'hidden', acronym: 'TTI'},
         {id: 'max-potential-fid', weight: 0, group: 'hidden'},
         {id: 'first-meaningful-paint', weight: 0, acronym: 'FMP', group: 'hidden'},
 
@@ -496,7 +446,7 @@ const defaultConfig = {
         {id: 'efficient-animated-content', weight: 0},
         {id: 'duplicated-javascript', weight: 0},
         {id: 'legacy-javascript', weight: 0},
-        {id: 'preload-lcp-image', weight: 0},
+        {id: 'prioritize-lcp-image', weight: 0},
         {id: 'total-byte-weight', weight: 0},
         {id: 'uses-long-cache-ttl', weight: 0},
         {id: 'dom-size', weight: 0},
@@ -517,7 +467,6 @@ const defaultConfig = {
         {id: 'non-composited-animations', weight: 0},
         {id: 'unsized-images', weight: 0},
         {id: 'viewport', weight: 0},
-        {id: 'no-unload-listeners', weight: 0},
         {id: 'uses-responsive-images-snapshot', weight: 0},
         {id: 'work-during-interaction', weight: 0},
         {id: 'bf-cache', weight: 0},
@@ -615,7 +564,7 @@ const defaultConfig = {
         {id: 'notification-on-start', weight: 1, group: 'best-practices-trust-safety'},
         {id: 'csp-xss', weight: 0, group: 'best-practices-trust-safety'},
         // User Experience
-        {id: 'password-inputs-can-be-pasted-into', weight: 1, group: 'best-practices-ux'},
+        {id: 'paste-preventing-inputs', weight: 1, group: 'best-practices-ux'},
         {id: 'image-aspect-ratio', weight: 1, group: 'best-practices-ux'},
         {id: 'image-size-responsive', weight: 1, group: 'best-practices-ux'},
         {id: 'preload-fonts', weight: 1, group: 'best-practices-ux'},
@@ -623,6 +572,7 @@ const defaultConfig = {
         {id: 'doctype', weight: 1, group: 'best-practices-browser-compat'},
         {id: 'charset', weight: 1, group: 'best-practices-browser-compat'},
         // General Group
+        {id: 'no-unload-listeners', weight: 1, group: 'best-practices-general'},
         {id: 'js-libraries', weight: 0, group: 'best-practices-general'},
         {id: 'deprecations', weight: 1, group: 'best-practices-general'},
         {id: 'errors-in-console', weight: 1, group: 'best-practices-general'},

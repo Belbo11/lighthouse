@@ -405,7 +405,7 @@ describe('UserFlow', () => {
         },
       }));
 
-      /** @type {LH.Config.Json} */
+      /** @type {LH.Config} */
       const flowConfig = {
         extends: 'lighthouse:default',
         settings: {

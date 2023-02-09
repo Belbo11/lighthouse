@@ -19,10 +19,11 @@
 
 import fs from 'fs';
 
+import {Audit} from '../audit.js';
 import {ByteEfficiencyAudit} from './byte-efficiency-audit.js';
+import {EntityClassification} from '../../computed/entity-classification.js';
 import {JSBundles} from '../../computed/js-bundles.js';
 import * as i18n from '../../lib/i18n/i18n.js';
-import thirdPartyWeb from '../../lib/third-party-web.js';
 import {getRequestForScript} from '../../lib/script-helpers.js';
 import {LH_ROOT} from '../../../root.js';
 
@@ -221,7 +222,6 @@ class LegacyJavascript extends ByteEfficiencyAudit {
       ['String.fromCodePoint', 'es6.string.from-code-point'],
       ['String.raw', 'es6.string.raw'],
       ['String.prototype.repeat', 'es6.string.repeat'],
-      ['Array.prototype.includes', 'es7.array.includes'],
       ['Object.entries', 'es7.object.entries'],
       ['Object.getOwnPropertyDescriptors', 'es7.object.get-own-property-descriptors'],
       ['Object.values', 'es7.object.values'],
@@ -265,7 +265,7 @@ class LegacyJavascript extends ByteEfficiencyAudit {
       },
       {
         name: '@babel/plugin-transform-regenerator',
-        expression: /regeneratorRuntime\.a?wrap/.source,
+        expression: /regeneratorRuntime\(?\)?\.a?wrap/.source,
         // Example of this transform: https://gist.github.com/connorjclark/af8bccfff377ac44efc104a79bc75da2
         // `regeneratorRuntime.awrap` is generated for every usage of `await`, and adds ~80 bytes each.
         estimateBytes: result => result.count * 80,
@@ -401,7 +401,10 @@ class LegacyJavascript extends ByteEfficiencyAudit {
    * @return {Promise<ByteEfficiencyProduct>}
    */
   static async audit_(artifacts, networkRecords, context) {
-    const mainDocumentEntity = thirdPartyWeb.getEntity(artifacts.URL.finalDisplayedUrl);
+    const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
+    const classifiedEntities = await EntityClassification.request(
+      {URL: artifacts.URL, devtoolsLog}, context);
+
     const bundles = await JSBundles.request(artifacts, context);
 
     /** @type {Item[]} */
@@ -450,7 +453,7 @@ class LegacyJavascript extends ByteEfficiencyAudit {
     const wastedBytesByUrl = new Map();
     for (const item of items) {
       // Only estimate savings if first party code has legacy code.
-      if (thirdPartyWeb.isFirstParty(item.url, mainDocumentEntity)) {
+      if (classifiedEntities.isFirstParty(item.url)) {
         wastedBytesByUrl.set(item.url, item.wastedBytes);
       }
     }

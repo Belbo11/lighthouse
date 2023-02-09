@@ -29,7 +29,7 @@ describe('DOBETTERWEB: doctype audit', () => {
     });
     assert.equal(auditResult.score, 0);
     expect(auditResult.explanation)
-        .toBeDisplayString('Document contains a doctype that triggers quirks-mode');
+        .toBeDisplayString('Document contains a `doctype` that triggers `quirks-mode`');
   });
 
   it('fails when document is in limited-quirks-mode', () => {
@@ -47,7 +47,7 @@ describe('DOBETTERWEB: doctype audit', () => {
     });
     assert.equal(auditResult.score, 0);
     expect(auditResult.explanation)
-        .toBeDisplayString('Document contains a doctype that triggers limited-quirks-mode');
+        .toBeDisplayString('Document contains a `doctype` that triggers `limited-quirks-mode`');
   });
 
   it('fails when the value of the name attribute is a value other than "html"', () => {

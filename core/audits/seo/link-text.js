@@ -141,7 +141,7 @@ class LinkText extends Audit {
       {key: 'text', valueType: 'text', label: 'Link Text'},
     ];
 
-    const details = Audit.makeTableDetails(headings, failingLinks, {});
+    const details = Audit.makeTableDetails(headings, failingLinks);
     let displayValue;
 
     if (failingLinks.length) {

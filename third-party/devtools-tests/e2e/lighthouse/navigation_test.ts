@@ -114,15 +114,15 @@ describe('Navigation', async function() {
         }
 
         assert.deepStrictEqual(artifacts.ViewportDimensions, {
-          innerHeight: 640,
-          innerWidth: 360,
-          outerHeight: 640,
-          outerWidth: 360,
-          devicePixelRatio: 3,
+          innerHeight: 823,
+          innerWidth: 412,
+          outerHeight: 823,
+          outerWidth: 412,
+          devicePixelRatio: 1.75,
         });
 
         const {auditResults, erroredAudits, failedAudits} = getAuditsBreakdown(lhr);
-        assert.strictEqual(auditResults.length, 174);
+        assert.strictEqual(auditResults.length, 173);
         assert.deepStrictEqual(erroredAudits, []);
         assert.deepStrictEqual(failedAudits.map(audit => audit.id), [
           'service-worker',
@@ -210,7 +210,7 @@ describe('Navigation', async function() {
         ];
 
         const {auditResults, erroredAudits, failedAudits} = getAuditsBreakdown(lhr, flakyAudits);
-        assert.strictEqual(auditResults.length, 151);
+        assert.strictEqual(auditResults.length, 150);
         assert.deepStrictEqual(erroredAudits, []);
         assert.deepStrictEqual(failedAudits.map(audit => audit.id), [
           'service-worker',

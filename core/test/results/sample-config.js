@@ -8,7 +8,7 @@
  * @fileoverview Config used for generating the sample_v2 golden LHR.
  */
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const budgetedConfig = {
   extends: 'lighthouse:default',
   settings: {

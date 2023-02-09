@@ -4,7 +4,7 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   audits: [
@@ -204,6 +204,44 @@ const expectations = {
       lineNumber: '>300',
       columnNumber: '>30',
     }],
+    DevtoolsLog: {
+      _includes: [
+        // Ensure we are getting async call stacks.
+        {
+          method: 'Network.requestWillBeSent',
+          params: {
+            type: 'Image',
+            request: {
+              url: 'http://localhost:10200/dobetterweb/lighthouse-480x318.jpg?async',
+            },
+            initiator: {
+              type: 'script',
+              stack: {
+                callFrames: [],
+                parent: {
+                  description: 'Image',
+                  callFrames: [
+                    {
+                      'functionName': '',
+                      'url': 'http://localhost:10200/dobetterweb/dbw_tester.html',
+                    },
+                  ],
+                  parent: {
+                    description: 'Promise.then',
+                    callFrames: [
+                      {
+                        'functionName': '',
+                        'url': 'http://localhost:10200/dobetterweb/dbw_tester.html',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
   },
   lhr: {
     requestedUrl: 'http://localhost:10200/dobetterweb/dbw_tester.html',
@@ -341,7 +379,7 @@ const expectations = {
           ],
         },
       },
-      'password-inputs-can-be-pasted-into': {
+      'paste-preventing-inputs': {
         score: 0,
         details: {
           items: {
@@ -355,9 +393,9 @@ const expectations = {
           items: {
             0: {
               displayedAspectRatio: /^120 x 15/,
-              url: 'http://localhost:10200/dobetterweb/lighthouse-480x318.jpg?iar1',
+              url: 'http://localhost:10200/dobetterweb/lighthouse-1024x680.jpg?iar1',
             },
-            length: 1,
+            length: 2,
           },
         },
       },
@@ -498,30 +536,53 @@ const expectations = {
           ],
         },
       },
-      'full-page-screenshot': {
-        score: null,
+      'prioritize-lcp-image': {
+        score: 1,
+        numericValue: 0,
         details: {
-          type: 'full-page-screenshot',
-          screenshot: {
-            width: 360,
-            // Allow for differences in platforms.
-            height: '1350±100',
-            data: /^data:image\/webp;.{500,}/,
-          },
-          nodes: {
-            _includes: [
-              // Test that the numbers for individual elements are in the ballpark.
-              [/[0-9]-[0-9]+-IMG/, imgA],
-              [/[0-9]-[0-9]+-IMG/, imgB],
-              // And then many more nodes...
-            ],
-            _excludes: [
-              // Ensure that the nodes we found above are unique.
-              [/[0-9]-[0-9]+-IMG/, imgA],
-              [/[0-9]-[0-9]+-IMG/, imgB],
-            ],
+          items: [{
+            node: {
+              snippet: '<h2 id="toppy" style="background-image:url(\'\');">',
+              nodeLabel: 'Do better web tester page',
+            },
+            url: 'http://localhost:10200/dobetterweb/lighthouse-1024x680.jpg?lcp',
+            wastedMs: 0,
+          }],
+          debugData: {
+            initiatorPath: [{
+              url: 'http://localhost:10200/dobetterweb/lighthouse-1024x680.jpg?lcp',
+              initiatorType: 'parser',
+            }, {
+              url: 'http://localhost:10200/dobetterweb/dbw_tester.css?delay=2000&async=true',
+              initiatorType: 'parser',
+            }, {
+              url: 'http://localhost:10200/dobetterweb/dbw_tester.html',
+              initiatorType: 'other',
+            }],
+            pathLength: 3,
           },
         },
+      },
+    },
+    fullPageScreenshot: {
+      screenshot: {
+        width: 412,
+        // Allow for differences in platforms.
+        height: '1350±100',
+        data: /^data:image\/webp;.{500,}/,
+      },
+      nodes: {
+        _includes: [
+          // Test that the numbers for individual elements are in the ballpark.
+          [/[0-9]-[0-9]+-IMG/, imgA],
+          [/[0-9]-[0-9]+-IMG/, imgB],
+          // And then many more nodes...
+        ],
+        _excludes: [
+          // Ensure that the nodes we found above are unique.
+          [/[0-9]-[0-9]+-IMG/, imgA],
+          [/[0-9]-[0-9]+-IMG/, imgB],
+        ],
       },
     },
   },

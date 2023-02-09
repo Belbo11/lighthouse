@@ -54,14 +54,15 @@ describe('Config', () => {
     const config = {
       // Extend default to double test our ability to handle injection.
       extends: 'lighthouse:default',
-      settings: {onlyAudits: ['my-audit']},
+      settings: {onlyAudits: ['my-audit'], disableFullPageScreenshot: true},
       passes: [{
         gatherers: [MyGatherer],
       }],
       audits: [MyAudit],
     };
     const newConfig = await LegacyResolvedConfig.fromJson(config);
-    assert.equal(MyGatherer, newConfig.passes[0].gatherers[0].implementation);
+    // Gatherer index 3 because of always included artifacts.
+    assert.equal(MyGatherer, newConfig.passes[0].gatherers[3].implementation);
     assert.equal(MyAudit, newConfig.audits[0].implementation);
   });
 
@@ -103,7 +104,7 @@ describe('Config', () => {
 
   it('throws when a passName is used twice', async () => {
     const unlikelyPassName = 'unlikelyPassName';
-    const configJson = {
+    const config = {
       passes: [{
         passName: unlikelyPassName,
         gatherers: ['meta-elements'],
@@ -113,18 +114,18 @@ describe('Config', () => {
       }],
     };
 
-    await assert.rejects(LegacyResolvedConfig.fromJson(configJson), /unique/);
+    await assert.rejects(LegacyResolvedConfig.fromJson(config), /unique/);
   });
 
   it('defaults passName to defaultPass', async () => {
     class MyGatherer extends Gatherer {}
-    const configJson = {
+    const config = {
       passes: [{
         gatherers: [MyGatherer],
       }],
     };
 
-    const resolvedConfig = await LegacyResolvedConfig.fromJson(configJson);
+    const resolvedConfig = await LegacyResolvedConfig.fromJson(config);
     const defaultPass = resolvedConfig.passes.find(pass => pass.passName === 'defaultPass');
     assert.ok(
       defaultPass.gatherers.find(gatherer => gatherer.implementation === MyGatherer),
@@ -186,11 +187,17 @@ describe('Config', () => {
     const resolvedConfig = await LegacyResolvedConfig.fromJson({
       extends: 'lighthouse:default',
       audits: [DoesntNeedYourCrap],
+      settings: {disableFullPageScreenshot: true},
     }, {
       // Trigger filtering logic.
       onlyAudits: ['optional-artifact-audit'],
     });
-    expect(resolvedConfig.passes[0].gatherers.map(g => g.path)).toEqual(['viewport-dimensions']);
+    expect(resolvedConfig.passes[0].gatherers.map(g => g.path)).toEqual([
+      'viewport-dimensions',
+      'web-app-manifest',
+      'installability-errors',
+      'stacks',
+    ]);
   });
 
   it('should keep optional artifacts in gatherers after filter', async () => {
@@ -222,7 +229,14 @@ describe('Config', () => {
       onlyAudits: ['optional-artifact-audit'],
     });
     expect(resolvedConfig.passes[0].gatherers.map(g => g.path))
-      .toEqual(['viewport-dimensions', 'source-maps']);
+      .toEqual([
+        'viewport-dimensions',
+        'source-maps',
+        'web-app-manifest',
+        'installability-errors',
+        'stacks',
+        'full-page-screenshot',
+      ]);
   });
 
   it('should keep optional artifacts in gatherers after filter', async () => {
@@ -254,7 +268,14 @@ describe('Config', () => {
       onlyAudits: ['optional-artifact-audit'],
     });
     expect(resolvedConfig.passes[0].gatherers.map(g => g.path))
-      .toEqual(['viewport-dimensions', 'source-maps']);
+      .toEqual([
+        'viewport-dimensions',
+        'source-maps',
+        'web-app-manifest',
+        'installability-errors',
+        'stacks',
+        'full-page-screenshot',
+      ]);
   });
 
   it('should keep optional artifacts in gatherers after filter', async () => {
@@ -286,7 +307,14 @@ describe('Config', () => {
       onlyAudits: ['optional-artifact-audit'],
     });
     expect(resolvedConfig.passes[0].gatherers.map(g => g.path))
-      .toEqual(['viewport-dimensions', 'source-maps']);
+      .toEqual([
+        'viewport-dimensions',
+        'source-maps',
+        'web-app-manifest',
+        'installability-errors',
+        'stacks',
+        'full-page-screenshot',
+      ]);
   });
 
   it('does not throw when an audit requires only base artifacts', async () => {
@@ -327,7 +355,7 @@ describe('Config', () => {
   });
 
   it('doesn\'t mutate old gatherers when filtering passes', async () => {
-    const configJSON = {
+    const config = {
       passes: [{
         gatherers: [
           'viewport-dimensions',
@@ -338,8 +366,8 @@ describe('Config', () => {
       audits: ['is-on-https'],
     };
 
-    const _ = await LegacyResolvedConfig.fromJson(configJSON);
-    assert.equal(configJSON.passes[0].gatherers.length, 3);
+    const _ = await LegacyResolvedConfig.fromJson(config);
+    assert.equal(config.passes[0].gatherers.length, 3);
   });
 
   it('expands audits', async () => {
@@ -681,12 +709,11 @@ describe('Config', () => {
     });
 
     assert.ok(resolvedConfig.audits.length, 'inherited audits by extension');
-    // +1 for `is-on-https`, +1 for `full-page-screenshot`.
+    // +1 for `is-on-https`.
     assert.equal(
-      resolvedConfig.audits.length, origConfig.categories.performance.auditRefs.length + 2);
+      resolvedConfig.audits.length, origConfig.categories.performance.auditRefs.length + 1);
     assert.equal(resolvedConfig.passes.length, 1, 'filtered out passes');
     assert.ok(resolvedConfig.audits.find(a => a.implementation.meta.id === 'is-on-https'));
-    assert.ok(resolvedConfig.audits.find(a => a.implementation.meta.id === 'full-page-screenshot'));
   });
 
   it('warns for invalid filters', async () => {
@@ -871,7 +898,7 @@ describe('Config', () => {
   describe('emulatedUserAgent', () => {
     it('uses the default UA string when emulatedUserAgent is undefined', async () => {
       const resolvedConfig = await LegacyResolvedConfig.fromJson({});
-      expect(resolvedConfig.settings.emulatedUserAgent).toMatch(/^Mozilla\/5.*Chrome-Lighthouse$/);
+      expect(resolvedConfig.settings.emulatedUserAgent).toMatch(/^Mozilla\/5.*moto.*Chrome/);
     });
 
     it('uses the default UA string when emulatedUserAgent is true', async () => {
@@ -880,7 +907,7 @@ describe('Config', () => {
           emulatedUserAgent: true,
         },
       });
-      expect(resolvedConfig.settings.emulatedUserAgent).toMatch(/^Mozilla\/5.*Chrome-Lighthouse$/);
+      expect(resolvedConfig.settings.emulatedUserAgent).toMatch(/^Mozilla\/5.*moto.*Chrome/);
     });
 
     it('does not use a UA string when emulatedUserAgent is false', async () => {
@@ -903,14 +930,14 @@ describe('Config', () => {
     });
   });
 
-  it('is idempotent when accepting a canonicalized Config as valid ConfigJson input', async () => {
+  it('is idempotent when accepting a canonicalized Config as valid config input', async () => {
     const resolvedConfig = await LegacyResolvedConfig.fromJson(legacyDefaultConfig);
     const configAgain = await LegacyResolvedConfig.fromJson(resolvedConfig);
     assert.deepEqual(resolvedConfig, configAgain);
   });
 
   // eslint-disable-next-line max-len
-  it('is idempotent accepting a canonicalized filtered Config as valid ConfigJson input', async () => {
+  it('is idempotent accepting a canonicalized filtered Config as valid config input', async () => {
     const extendedJson = {
       extends: 'lighthouse:default',
       settings: {
@@ -984,18 +1011,18 @@ describe('Config', () => {
     const configFixturePath = moduleDir + '/../../fixtures/config-plugins/';
 
     it('should append audits', async () => {
-      const configJson = {
+      const config = {
         audits: ['installable-manifest', 'metrics'],
         plugins: ['lighthouse-plugin-simple'],
       };
       const resolvedConfig =
-        await LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath});
+        await LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath});
       assert.deepStrictEqual(resolvedConfig.audits.map(a => a.path),
         ['installable-manifest', 'metrics', 'redirects', 'user-timings']);
     });
 
     it('should append and use plugin-prefixed groups', async () => {
-      const configJson = {
+      const config = {
         audits: ['installable-manifest', 'metrics'],
         plugins: ['lighthouse-plugin-simple'],
         groups: {
@@ -1003,7 +1030,7 @@ describe('Config', () => {
         },
       };
       const resolvedConfig =
-        await LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath});
+        await LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath});
 
       const groupIds = Object.keys(resolvedConfig.groups);
       assert.ok(groupIds.length === 2);
@@ -1016,12 +1043,12 @@ describe('Config', () => {
     });
 
     it('should append a category', async () => {
-      const configJson = {
+      const config = {
         extends: 'lighthouse:default',
         plugins: ['lighthouse-plugin-simple'],
       };
       const resolvedConfig =
-        await LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath});
+        await LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath});
       const categoryNames = Object.keys(resolvedConfig.categories);
       assert.ok(categoryNames.length > 1);
       assert.strictEqual(categoryNames[categoryNames.length - 1], 'lighthouse-plugin-simple');
@@ -1030,7 +1057,7 @@ describe('Config', () => {
 
     describe('budget setting', () => {
       it('should be initialized', async () => {
-        const configJson = {
+        const config = {
           settings: {
             budgets: [{
               path: '/',
@@ -1041,7 +1068,7 @@ describe('Config', () => {
             }],
           },
         };
-        const resolvedConfig = await LegacyResolvedConfig.fromJson(configJson);
+        const resolvedConfig = await LegacyResolvedConfig.fromJson(config);
         assert.equal(resolvedConfig.settings.budgets[0].resourceCounts.length, 1);
         assert.equal(resolvedConfig.settings.budgets[0].resourceCounts[0].resourceType, 'image');
         assert.equal(resolvedConfig.settings.budgets[0].resourceCounts[0].budget, 500);
@@ -1091,38 +1118,38 @@ describe('Config', () => {
     });
 
     it('should throw if the plugin is invalid', async () => {
-      const configJson = {
+      const config = {
         extends: 'lighthouse:default',
         plugins: ['lighthouse-plugin-no-category'],
       };
       // Required to have a `category`, so plugin is invalid.
       await assert.rejects(
-        () => LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath}),
+        () => LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath}),
         /^Error: lighthouse-plugin-no-category has no valid category/);
     });
 
     it('should throw if the plugin is not found', async () => {
-      const configJson = {
+      const config = {
         extends: 'lighthouse:default',
         plugins: ['lighthouse-plugin-not-a-plugin'],
       };
       await assert.rejects(
-        () => LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath}),
+        () => LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath}),
         /^Error: Unable to locate plugin: `lighthouse-plugin-not-a-plugin/);
     });
 
     it('should throw if the plugin name does not begin with "lighthouse-plugin-"', async () => {
-      const configJson = {
+      const config = {
         extends: 'lighthouse:default',
         plugins: ['just-let-me-be-a-plugin'],
       };
       await assert.rejects(
-        () => LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath}),
+        () => LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath}),
         /^Error: plugin name 'just-let-me-be-a-plugin' does not start with 'lighthouse-plugin-'/);
     });
 
     it('should throw if the plugin name would shadow a category id', async () => {
-      const configJson = {
+      const config = {
         extends: 'lighthouse:default',
         plugins: ['lighthouse-plugin-simple'],
         categories: {
@@ -1130,7 +1157,7 @@ describe('Config', () => {
         },
       };
       await assert.rejects(
-        () => LegacyResolvedConfig.fromJson(configJson, {configPath: configFixturePath}),
+        () => LegacyResolvedConfig.fromJson(config, {configPath: configFixturePath}),
         /^Error: plugin name 'lighthouse-plugin-simple' not allowed because it is the id of a category/); // eslint-disable-line max-len
     });
   });
@@ -1228,12 +1255,9 @@ describe('Config', () => {
       };
       const resolvedConfig = await LegacyResolvedConfig.fromJson(extended);
       const selectedCategory = origConfig.categories.performance;
-      // +1 for `full-page-screenshot`.
-      const auditCount = Object.keys(selectedCategory.auditRefs).length + 1;
+      const auditCount = Object.keys(selectedCategory.auditRefs).length;
 
       assert.equal(resolvedConfig.audits.length, auditCount, '# of audits match category list');
-      assert.ok(
-        resolvedConfig.audits.find(a => a.implementation.meta.id === 'full-page-screenshot'));
     });
 
     it('should only run specified audits', async () => {
@@ -1258,13 +1282,11 @@ describe('Config', () => {
       };
       const resolvedConfig = await LegacyResolvedConfig.fromJson(extended);
       const selectedCategory = origConfig.categories.performance;
-      // +1 for `service-worker`, +1 for `full-page-screenshot`.
-      const auditCount = Object.keys(selectedCategory.auditRefs).length + 2;
+      // +1 for `service-worker`.
+      const auditCount = Object.keys(selectedCategory.auditRefs).length + 1;
       assert.equal(resolvedConfig.passes.length, 2, 'incorrect # of passes');
       assert.equal(resolvedConfig.audits.length, auditCount, 'audit filtering failed');
       assert.ok(resolvedConfig.audits.find(a => a.implementation.meta.id === 'service-worker'));
-      assert.ok(
-        resolvedConfig.audits.find(a => a.implementation.meta.id === 'full-page-screenshot'));
     });
 
     it('should support redundant filtering', async () => {
@@ -1277,43 +1299,40 @@ describe('Config', () => {
       };
       const resolvedConfig = await LegacyResolvedConfig.fromJson(extended);
       const selectedCategory = origConfig.categories.pwa;
-      // +1 for `full-page-screenshot`.
-      const auditCount = Object.keys(selectedCategory.auditRefs).length + 1;
+      const auditCount = Object.keys(selectedCategory.auditRefs).length;
       assert.equal(resolvedConfig.passes.length, 2, 'incorrect # of passes');
       assert.equal(resolvedConfig.audits.length, auditCount, 'audit filtering failed');
-      assert.ok(
-        resolvedConfig.audits.find(a => a.implementation.meta.id === 'full-page-screenshot'));
     });
 
-    it('should keep full-page-screenshot even if onlyCategories is set', async () => {
-      assert.ok(origConfig.audits.includes('full-page-screenshot'));
-      // full-page-screenshot does not belong to a category.
-      const matchCategories = Object.values(origConfig.categories).filter(cat =>
-          cat.auditRefs.find(ref => ref.id === 'full-page-screenshot'));
-      assert.equal(matchCategories.length, 0);
+    it('should include full-page-screenshot by default', async () => {
+      const resolvedConfig = await LegacyResolvedConfig.fromJson(origConfig);
+      assert.ok(resolvedConfig.passes[0].gatherers
+        .some(g => g.implementation.name === 'FullPageScreenshot'));
+    });
 
+    it('should include full-page-screenshot when filtered, if not explictly excluded', async () => {
       const extended = {
         extends: 'lighthouse:default',
         settings: {
-          onlyCategories: ['accessibility'],
+          onlyCategories: ['performance'],
         },
       };
       const resolvedConfig = await LegacyResolvedConfig.fromJson(extended);
-
-      assert.ok(
-        resolvedConfig.audits.find(a => a.implementation.meta.id === 'full-page-screenshot'));
+      assert.ok(resolvedConfig.passes[0].gatherers
+        .some(g => g.implementation.name === 'FullPageScreenshot'));
     });
 
-    it('should keep full-page-screenshot even if skipAudits is set', async () => {
+    it('should exclude full-page-screenshot if specified', async () => {
       const extended = {
         extends: 'lighthouse:default',
         settings: {
-          skipAudits: ['font-size'],
+          onlyCategories: ['performance'],
+          disableFullPageScreenshot: true,
         },
       };
       const resolvedConfig = await LegacyResolvedConfig.fromJson(extended);
-      assert.ok(
-        resolvedConfig.audits.find(a => a.implementation.meta.id === 'full-page-screenshot'));
+      assert.ok(!resolvedConfig.passes[0].gatherers
+        .some(g => g.implementation.name === 'FullPageScreenshot'));
     });
   });
 
@@ -1332,12 +1351,12 @@ describe('Config', () => {
     });
 
     it('throws for invalid auditDefns', async () => {
-      const configJson = {
+      const config = {
         audits: [
           new Gatherer(),
         ],
       };
-      await assert.rejects(LegacyResolvedConfig.fromJson(configJson), /Invalid Audit type/);
+      await assert.rejects(LegacyResolvedConfig.fromJson(config), /Invalid Audit type/);
     });
   });
 
@@ -1359,6 +1378,19 @@ describe('Config', () => {
       };
       assert.deepEqual(mergedJson[0].gatherers,
         [{path: 'viewport-dimensions', instance: expectedInstance}]);
+    });
+
+    it('should sort gatherers by internal priority', async () => {
+      const gatherers = [
+        'bf-cache-failures', // Has internal priority of 1
+        'viewport-dimensions', // Has default internal priority of 0
+      ];
+
+      const merged = await LegacyResolvedConfig.requireGatherers([{gatherers}]);
+
+      assert.deepEqual(
+        merged[0].gatherers.map(g => g.path),
+        ['viewport-dimensions', 'bf-cache-failures']);
     });
 
     async function loadGatherer(gathererEntry) {
@@ -1474,7 +1506,7 @@ describe('Config', () => {
   describe('#getPrintString', () => {
     it('doesn\'t include empty audit options in output', async () => {
       const aOpt = 'auditOption';
-      const configJson = {
+      const config = {
         extends: 'lighthouse:default',
         passes: [{
           passName: 'defaultPass',
@@ -1488,7 +1520,7 @@ describe('Config', () => {
         ],
       };
 
-      const printed = (await LegacyResolvedConfig.fromJson(configJson)).getPrintString();
+      const printed = (await LegacyResolvedConfig.fromJson(config)).getPrintString();
       const printedConfig = JSON.parse(printed);
 
       // Check that options weren't completely eliminated.
@@ -1519,7 +1551,7 @@ describe('Config', () => {
       assert.ok(localizableCount > 0);
     });
 
-    it('prints a valid ConfigJson that can make an identical Config', async () => {
+    it('prints a valid config that can make an identical Config', async () => {
       // depends on defaultConfig having a `path` for all gatherers and audits.
       const firstConfig = await LegacyResolvedConfig.fromJson(legacyDefaultConfig);
       const firstPrint = firstConfig.getPrintString();

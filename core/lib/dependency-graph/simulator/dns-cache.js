@@ -4,6 +4,8 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
+import * as LH from '../../../../types/lh.js';
+
 // A DNS lookup will usually take ~1-2 roundtrips of connection latency plus the extra DNS routing time.
 // Example: https://www.webpagetest.org/result/180703_3A_e33ec79747c002ed4d7bcbfc81462203/1/details/#waterfall_view_step1
 // Example: https://www.webpagetest.org/result/180707_1M_89673eb633b5d98386de95dfcf9b33d5/1/details/#waterfall_view_step1

@@ -237,7 +237,8 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
   async function checkForQuiet(executionContext, resolve) {
     if (canceled) return;
     const timeSinceLongTask =
-      await executionContext.evaluate(checkTimeSinceLastLongTaskInPage, {args: []});
+      await executionContext.evaluate(
+        checkTimeSinceLastLongTaskInPage, {args: [], useIsolation: true});
     if (canceled) return;
 
     if (typeof timeSinceLongTask === 'number') {
@@ -260,7 +261,7 @@ function waitForCPUIdle(session, waitForCPUQuiet) {
   const executionContext = new ExecutionContext(session);
   /** @type {Promise<void>} */
   const promise = new Promise((resolve, reject) => {
-    executionContext.evaluate(registerPerformanceObserverInPage, {args: []})
+    executionContext.evaluate(registerPerformanceObserverInPage, {args: [], useIsolation: true})
       .then(() => checkForQuiet(executionContext, resolve))
       .catch(reject);
     cancel = () => {

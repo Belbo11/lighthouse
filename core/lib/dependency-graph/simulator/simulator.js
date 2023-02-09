@@ -4,6 +4,7 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
+import * as LH from '../../../../types/lh.js';
 import {BaseNode} from '../base-node.js';
 import {TcpConnection} from './tcp-connection.js';
 import {ConnectionPool} from './connection-pool.js';
@@ -14,8 +15,8 @@ import * as constants from '../../../config/constants.js';
 const mobileSlow4G = constants.throttling.mobileSlow4G;
 
 /** @typedef {import('../base-node.js').Node} Node */
-/** @typedef {import('../network-node').NetworkNode} NetworkNode */
-/** @typedef {import('../cpu-node').CPUNode} CpuNode */
+/** @typedef {import('../network-node.js').NetworkNode} NetworkNode */
+/** @typedef {import('../cpu-node.js').CPUNode} CpuNode */
 /** @typedef {import('./simulator-timing-map.js').CpuNodeTimingComplete | import('./simulator-timing-map.js').NetworkNodeTimingComplete} CompleteNodeTiming */
 /** @typedef {import('./simulator-timing-map.js').ConnectionTiming} ConnectionTiming */
 

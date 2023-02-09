@@ -6,33 +6,33 @@
  */
 
 import {Audit} from '../core/audits/audit.js';
-import {SharedFlagsSettings, ConfigSettings} from './lhr/settings';
-import Gatherer from './gatherer';
-import {IcuMessage} from './lhr/i18n';
+import {SharedFlagsSettings, ConfigSettings} from './lhr/settings.js';
+import Gatherer from './gatherer.js';
+import {IcuMessage} from './lhr/i18n.js';
 
 interface ClassOf<T> {
   new (): T;
 }
 
+/**
+ * The Lighthouse Config format.
+ */
+interface Config {
+  extends?: 'lighthouse:default' | string;
+  settings?: SharedFlagsSettings;
+  audits?: Config.AuditJson[] | null;
+  categories?: Record<string, Config.CategoryJson> | null;
+  groups?: Record<string, Config.GroupJson> | null;
+  plugins?: Array<string>;
+
+  // Fraggle Rock Only
+  artifacts?: Config.ArtifactJson[] | null;
+
+  // Legacy Only
+  passes?: Config.PassJson[] | null;
+}
+
 declare module Config {
-  /**
-   * The pre-normalization Lighthouse Config format.
-   */
-  interface Json {
-    extends?: 'lighthouse:default' | string;
-    settings?: SharedFlagsSettings;
-    audits?: Config.AuditJson[] | null;
-    categories?: Record<string, CategoryJson> | null;
-    groups?: Record<string, Config.GroupJson> | null;
-    plugins?: Array<string>;
-
-    // Fraggle Rock Only
-    artifacts?: ArtifactJson[] | null;
-
-    // Legacy Only
-    passes?: PassJson[] | null;
-  }
-
   /**
    * The normalized and fully resolved legacy config.
    */

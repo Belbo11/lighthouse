@@ -10,7 +10,7 @@
 
 import defaultConfig from '../../config/default-config.js';
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const legacyDefaultConfig = JSON.parse(JSON.stringify(defaultConfig));
 if (!legacyDefaultConfig.categories) {
   throw new Error('Default config should always have categories');
@@ -59,7 +59,6 @@ legacyDefaultConfig.passes = [{
     'dobetterweb/doctype',
     'dobetterweb/domstats',
     'dobetterweb/optimized-images',
-    'dobetterweb/password-inputs-with-prevented-paste',
     'dobetterweb/response-compression',
     'dobetterweb/tags-blocking-first-paint',
     'seo/font-size',
@@ -70,6 +69,9 @@ legacyDefaultConfig.passes = [{
     'trace-elements',
     'inspector-issues',
     'source-maps',
+    'web-app-manifest',
+    'installability-errors',
+    'stacks',
     'full-page-screenshot',
     'bf-cache-failures',
   ],

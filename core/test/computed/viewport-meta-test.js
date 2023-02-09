@@ -67,6 +67,12 @@ describe('ViewportMeta computed artifact', () => {
     }));
   });
 
+  it('recognizes interactive-widget property', async () => {
+    const viewport = 'width=device-width, interactive-widget=resizes-content';
+    const {parserWarnings} = await ViewportMeta.compute_(makeMetaElements(viewport));
+    assert.equal(parserWarnings[0], undefined);
+  });
+
   it('doesn\'t throw when viewport contains "invalid" iOS properties', async () => {
     const viewports = [
       'width=device-width, shrink-to-fit=no',

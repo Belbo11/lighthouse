@@ -9,13 +9,13 @@ import log from 'lighthouse-logger';
 import {Driver} from './driver.js';
 import {Runner} from '../runner.js';
 import {getEmptyArtifactState, collectPhaseArtifacts, awaitArtifacts} from './runner-helpers.js';
-import {prepareTargetForTimespanMode} from './driver/prepare.js';
+import {enableAsyncStacks, prepareTargetForTimespanMode} from './driver/prepare.js';
 import {initializeConfig} from '../config/config.js';
 import {getBaseArtifacts, finalizeArtifacts} from './base-artifacts.js';
 
 /**
  * @param {LH.Puppeteer.Page} page
- * @param {{config?: LH.Config.Json, flags?: LH.Flags}} [options]
+ * @param {{config?: LH.Config, flags?: LH.Flags}} [options]
  * @return {Promise<{endTimespanGather(): Promise<LH.Gatherer.FRGatherResult>}>}
  */
 async function startTimespanGather(page, options = {}) {
@@ -44,6 +44,9 @@ async function startTimespanGather(page, options = {}) {
   };
 
   await prepareTargetForTimespanMode(driver, resolvedConfig.settings);
+
+  const disableAsyncStacks = await enableAsyncStacks(driver.defaultSession);
+
   await collectPhaseArtifacts({phase: 'startInstrumentation', ...phaseOptions});
   await collectPhaseArtifacts({phase: 'startSensitiveInstrumentation', ...phaseOptions});
 
@@ -58,6 +61,12 @@ async function startTimespanGather(page, options = {}) {
 
           await collectPhaseArtifacts({phase: 'stopSensitiveInstrumentation', ...phaseOptions});
           await collectPhaseArtifacts({phase: 'stopInstrumentation', ...phaseOptions});
+
+          // bf-cache-failures can emit `Page.frameNavigated` at the end of the run.
+          // This can cause us to issue protocol commands after the target closes.
+          // We should disable our `Page.frameNavigated` handlers before that.
+          await disableAsyncStacks();
+
           await collectPhaseArtifacts({phase: 'getArtifact', ...phaseOptions});
           await driver.disconnect();
 

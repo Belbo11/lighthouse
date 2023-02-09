@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsc"
+  },
+  "devDependencies": {
+    "lighthouse": "file:../../../dist/lighthouse.tgz",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "puppeteer": "^19.5.2"
+  }
+}

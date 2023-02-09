@@ -38,7 +38,7 @@ describe('.gotoURL', () => {
       .mockResponse('Page.setLifecycleEventsEnabled')
       .mockResponse('Page.navigate')
       .mockResponse('Runtime.evaluate')
-      .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: 'ABC'}}});
+      .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: 'ABC'}}});
   });
 
   it('will track redirects through gotoURL load with warning', async () => {

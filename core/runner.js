@@ -23,6 +23,8 @@ import {ReportGenerator} from '../report/generator/report-generator.js';
 import {LighthouseError} from './lib/lh-error.js';
 import {lighthouseVersion} from '../root.js';
 import {getModuleDirectory} from '../esm-utils.js';
+import {EntityClassification} from './computed/entity-classification.js';
+import UrlUtils from './lib/url-utils.js';
 
 const moduleDir = getModuleDirectory(import.meta);
 
@@ -110,6 +112,9 @@ class Runner {
         categories,
         categoryGroups: resolvedConfig.groups || undefined,
         stackPacks: stackPacks.getStackPacks(artifacts.Stacks),
+        entities: await Runner.getEntityClassification(artifacts, {computedCache}),
+        fullPageScreenshot: resolvedConfig.settings.disableFullPageScreenshot ?
+          undefined : artifacts.FullPageScreenshot,
         timing: this._getTiming(artifacts),
         i18n: {
           rendererFormattedStrings: format.getRendererFormattedStrings(settings.locale),
@@ -135,6 +140,40 @@ class Runner {
     } catch (err) {
       throw Runner.createRunnerError(err, settings);
     }
+  }
+
+  /**
+   * @param {LH.Artifacts} artifacts
+   * @param {LH.Artifacts.ComputedContext} context
+   */
+  static async getEntityClassification(artifacts, context) {
+    const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
+    if (!devtoolsLog) return;
+    const classifiedEntities = await EntityClassification.request(
+      {URL: artifacts.URL, devtoolsLog}, context);
+
+    /** @type {Array<LH.Result.LhrEntity>} */
+    const entities = [];
+    for (const [entity, entityUrls] of classifiedEntities.urlsByEntity) {
+      const uniqueOrigins = new Set();
+      for (const url of entityUrls) {
+        const origin = UrlUtils.getOrigin(url);
+        if (origin) uniqueOrigins.add(origin);
+      }
+
+      /** @type {LH.Result.LhrEntity} */
+      const shortEntity = {
+        name: entity.name,
+        homepage: entity.homepage,
+        origins: [...uniqueOrigins],
+      };
+      // Reduce payload size in LHR JSON by omitting whats falsy.
+      if (entity === classifiedEntities.firstParty) shortEntity.isFirstParty = true;
+      if (entity.isUnrecognized) shortEntity.isUnrecognized = true;
+      entities.push(shortEntity);
+    }
+
+    return entities;
   }
 
   /**

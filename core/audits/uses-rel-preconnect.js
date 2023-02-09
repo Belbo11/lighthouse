@@ -11,7 +11,6 @@ import * as i18n from '../lib/i18n/i18n.js';
 import {NetworkRecords} from '../computed/network-records.js';
 import {MainResource} from '../computed/main-resource.js';
 import {LoadSimulator} from '../computed/load-simulator.js';
-import {ProcessedTrace} from '../computed/processed-trace.js';
 import {ProcessedNavigation} from '../computed/processed-navigation.js';
 import {PageDependencyGraph} from '../computed/page-dependency-graph.js';
 import {LanternLargestContentfulPaint} from '../computed/metrics/lantern-largest-contentful-paint.js';
@@ -96,7 +95,8 @@ class UsesRelPreconnectAudit extends Audit {
    * @return {boolean}
    */
   static socketStartTimeIsBelowThreshold(record, mainResource) {
-    return Math.max(0, record.startTime - mainResource.endTime) < PRECONNECT_SOCKET_MAX_IDLE_IN_MS;
+    const timeSinceMainEnd = Math.max(0, record.networkRequestTime - mainResource.networkEndTime);
+    return timeSinceMainEnd < PRECONNECT_SOCKET_MAX_IDLE_IN_MS;
   }
 
   /**
@@ -113,14 +113,12 @@ class UsesRelPreconnectAudit extends Audit {
     /** @type {Array<LH.IcuMessage>} */
     const warnings = [];
 
-    const processedTrace = await ProcessedTrace.request(trace, context);
-
     const [networkRecords, mainResource, loadSimulator, processedNavigation, pageGraph] =
       await Promise.all([
         NetworkRecords.request(devtoolsLog, context),
         MainResource.request({devtoolsLog, URL: artifacts.URL}, context),
         LoadSimulator.request({devtoolsLog, settings}, context),
-        ProcessedNavigation.request(processedTrace, context),
+        ProcessedNavigation.request(trace, context),
         PageDependencyGraph.request({trace, devtoolsLog, URL: artifacts.URL}, context),
       ]);
 
@@ -172,7 +170,7 @@ class UsesRelPreconnectAudit extends Audit {
       // Sometimes requests are done simultaneous and the connection has not been made
       // chrome will try to connect for each network record, we get the first record
       const firstRecordOfOrigin = records.reduce((firstRecord, record) => {
-        return (record.startTime < firstRecord.startTime) ? record : firstRecord;
+        return (record.networkRequestTime < firstRecord.networkRequestTime) ? record : firstRecord;
       });
 
       // Skip the origin if we don't have timing information
@@ -189,8 +187,8 @@ class UsesRelPreconnectAudit extends Audit {
       if (firstRecordOfOrigin.parsedURL.scheme === 'https') connectionTime = connectionTime * 2;
 
       const timeBetweenMainResourceAndDnsStart =
-        firstRecordOfOrigin.startTime -
-        mainResource.endTime +
+        firstRecordOfOrigin.networkRequestTime -
+        mainResource.networkEndTime +
         firstRecordOfOrigin.timing.dnsStart;
 
       const wastedMs = Math.min(connectionTime, timeBetweenMainResourceAndDnsStart);
@@ -235,7 +233,8 @@ class UsesRelPreconnectAudit extends Audit {
       {key: 'wastedMs', valueType: 'timespanMs', label: str_(i18n.UIStrings.columnWastedMs)},
     ];
 
-    const details = Audit.makeOpportunityDetails(headings, results, maxWasted);
+    const details = Audit.makeOpportunityDetails(headings, results,
+      {overallSavingsMs: maxWasted});
 
     return {
       score: ByteEfficiencyAudit.scoreForWastedMs(maxWasted),

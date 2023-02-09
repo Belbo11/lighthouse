@@ -38,10 +38,18 @@ class InstallabilityErrors extends FRGatherer {
    * @param {LH.Gatherer.FRTransitionalContext} context
    * @return {Promise<LH.Artifacts['InstallabilityErrors']>}
    */
-  getArtifact(context) {
+  async getArtifact(context) {
     const driver = context.driver;
 
-    return InstallabilityErrors.getInstallabilityErrors(driver.defaultSession);
+    try {
+      return await InstallabilityErrors.getInstallabilityErrors(driver.defaultSession);
+    } catch {
+      return {
+        errors: [
+          {errorId: 'protocol-timeout', errorArguments: []},
+        ],
+      };
+    }
   }
 }
 

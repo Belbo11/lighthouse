@@ -32,7 +32,7 @@ globalThis.Buffer = Buffer;
  * @see https://source.chromium.org/chromium/chromium/src/+/main:third_party/devtools-frontend/src/front_end/panels/lighthouse/LighthouseController.ts;l=280
  * @param {Array<string>} categoryIDs
  * @param {string} device
- * @return {LH.Config.Json}
+ * @return {LH.Config}
  */
 function createConfig(categoryIDs, device) {
   /** @type {LH.SharedFlagsSettings} */
@@ -84,7 +84,7 @@ function lookupCanonicalLocale(locales) {
 /**
  * TODO: Expose api directly when DevTools usage is updated.
  * @param {string} url
- * @param {{page: LH.Puppeteer.Page, config?: LH.Config.Json, flags?: LH.Flags}} args
+ * @param {{page: LH.Puppeteer.Page, config?: LH.Config, flags?: LH.Flags}} args
  */
 function runLighthouseNavigation(url, {page, ...options}) {
   return navigation(page, url, options);
@@ -92,7 +92,7 @@ function runLighthouseNavigation(url, {page, ...options}) {
 
 /**
  * TODO: Expose api directly when DevTools usage is updated.
- * @param {{page: LH.Puppeteer.Page, config?: LH.Config.Json, flags?: LH.Flags}} args
+ * @param {{page: LH.Puppeteer.Page, config?: LH.Config, flags?: LH.Flags}} args
  */
 function startLighthouseTimespan({page, ...options}) {
   return startTimespan(page, options);
@@ -100,7 +100,7 @@ function startLighthouseTimespan({page, ...options}) {
 
 /**
  * TODO: Expose api directly when DevTools usage is updated.
- * @param {{page: LH.Puppeteer.Page, config?: LH.Config.Json, flags?: LH.Flags}} args
+ * @param {{page: LH.Puppeteer.Page, config?: LH.Config, flags?: LH.Flags}} args
  */
 function runLighthouseSnapshot({page, ...options}) {
   return snapshot(page, options);

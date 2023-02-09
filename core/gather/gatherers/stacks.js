@@ -126,7 +126,11 @@ class Stacks extends FRGatherer {
    * @return {Promise<LH.Artifacts['Stacks']>}
    */
   async getArtifact(context) {
-    return Stacks.collectStacks(context.driver.executionContext);
+    try {
+      return await Stacks.collectStacks(context.driver.executionContext);
+    } catch {
+      return [];
+    }
   }
 }
 

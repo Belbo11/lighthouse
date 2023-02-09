@@ -6,7 +6,6 @@
 
 import {BaseNode} from '../../lib/dependency-graph/base-node.js';
 import {NetworkRequest} from '../../lib/network-request.js';
-import {ProcessedTrace} from '../processed-trace.js';
 import {ProcessedNavigation} from '../processed-navigation.js';
 import {PageDependencyGraph} from '../page-dependency-graph.js';
 import {LoadSimulator} from '../load-simulator.js';
@@ -106,8 +105,7 @@ class LanternMetric {
 
     const metricName = this.name.replace('Lantern', '');
     const graph = await PageDependencyGraph.request(data, context);
-    const processedTrace = await ProcessedTrace.request(data.trace, context);
-    const processedNavigation = await ProcessedNavigation.request(processedTrace, context);
+    const processedNavigation = await ProcessedNavigation.request(data.trace, context);
     const simulator = data.simulator || (await LoadSimulator.request(data, context));
 
     const optimisticGraph = this.getOptimisticGraph(graph, processedNavigation);

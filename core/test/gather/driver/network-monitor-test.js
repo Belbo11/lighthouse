@@ -171,7 +171,7 @@ describe('NetworkMonitor', () => {
         .mockResponse('Target.setAutoAttach')
         .mockResponse('Target.setAutoAttach')
         .mockResponse('Target.setAutoAttach')
-        .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1'}}});
+        .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1'}}});
       await monitor.enable();
 
       const type = 'Navigation';
@@ -190,14 +190,14 @@ describe('NetworkMonitor', () => {
       rootCdpSessionMock.send
         .mockResponse('Target.setAutoAttach')
         .mockResponse('Target.setAutoAttach')
-        .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1'}}});
+        .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1'}}});
       await monitor.enable();
 
       // One server redirect followed by a client redirect
       const devtoolsLog = networkRecordsToDevtoolsLog([
-        {requestId: '1', startTime: 100, url: 'https://example.com', priority: 'VeryHigh'},
-        {requestId: '1:redirect', startTime: 200, url: 'https://intermediate.example.com', priority: 'VeryHigh'},
-        {requestId: '2', startTime: 300, url: 'https://page.example.com', priority: 'VeryHigh'},
+        {requestId: '1', networkRequestTime: 100, url: 'https://example.com', priority: 'VeryHigh'},
+        {requestId: '1:redirect', networkRequestTime: 200, url: 'https://intermediate.example.com', priority: 'VeryHigh'},
+        {requestId: '2', networkRequestTime: 300, url: 'https://page.example.com', priority: 'VeryHigh'},
       ]);
       for (const event of devtoolsLog) {
         rootDispatch(event);
@@ -218,7 +218,7 @@ describe('NetworkMonitor', () => {
       rootCdpSessionMock.send
         .mockResponse('Target.setAutoAttach')
         .mockResponse('Target.setAutoAttach')
-        .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1'}}});
+        .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1'}}});
       await monitor.enable();
 
       const type = 'Navigation';
@@ -371,7 +371,7 @@ describe('NetworkMonitor', () => {
         new NetworkRequest(),
         {
           url,
-          finished: !!data.endTime,
+          finished: !!data.networkEndTime,
           parsedURL: {scheme},
         },
         data
@@ -380,9 +380,9 @@ describe('NetworkMonitor', () => {
 
     it('should find the 0-quiet periods', () => {
       const records = [
-        record({startTime: 0, endTime: 1}),
-        record({startTime: 2, endTime: 3}),
-        record({startTime: 4, endTime: 5}),
+        record({networkRequestTime: 0, networkEndTime: 1}),
+        record({networkRequestTime: 2, networkEndTime: 3}),
+        record({networkRequestTime: 4, networkEndTime: 5}),
       ];
 
       const periods = NetworkMonitor.findNetworkQuietPeriods(records, 0);
@@ -395,11 +395,11 @@ describe('NetworkMonitor', () => {
 
     it('should find the 2-quiet periods', () => {
       const records = [
-        record({startTime: 0, endTime: 1.5}),
-        record({startTime: 0, endTime: 2}),
-        record({startTime: 0, endTime: 2.5}),
-        record({startTime: 2, endTime: 3}),
-        record({startTime: 4, endTime: 5}),
+        record({networkRequestTime: 0, networkEndTime: 1.5}),
+        record({networkRequestTime: 0, networkEndTime: 2}),
+        record({networkRequestTime: 0, networkEndTime: 2.5}),
+        record({networkRequestTime: 2, networkEndTime: 3}),
+        record({networkRequestTime: 4, networkEndTime: 5}),
       ];
 
       const periods = NetworkMonitor.findNetworkQuietPeriods(records, 2);
@@ -408,14 +408,14 @@ describe('NetworkMonitor', () => {
 
     it('should handle unfinished requests', () => {
       const records = [
-        record({startTime: 0, endTime: 1.5}),
-        record({startTime: 0, endTime: 2}),
-        record({startTime: 0, endTime: 2.5}),
-        record({startTime: 2, endTime: 3}),
-        record({startTime: 2}),
-        record({startTime: 2}),
-        record({startTime: 4, endTime: 5}),
-        record({startTime: 5.5}),
+        record({networkRequestTime: 0, networkEndTime: 1.5}),
+        record({networkRequestTime: 0, networkEndTime: 2}),
+        record({networkRequestTime: 0, networkEndTime: 2.5}),
+        record({networkRequestTime: 2, networkEndTime: 3}),
+        record({networkRequestTime: 2}),
+        record({networkRequestTime: 2}),
+        record({networkRequestTime: 4, networkEndTime: 5}),
+        record({networkRequestTime: 5.5}),
       ];
 
       const periods = NetworkMonitor.findNetworkQuietPeriods(records, 2);
@@ -428,8 +428,9 @@ describe('NetworkMonitor', () => {
 
     it('should ignore data URIs', () => {
       const records = [
-        record({startTime: 0, endTime: 1}),
-        record({startTime: 0, endTime: 2, url: 'data:image/png;base64,', protocol: 'data'}),
+        record({networkRequestTime: 0, networkEndTime: 1}),
+        record({networkRequestTime: 0, networkEndTime: 2, url: 'data:image/png;base64,',
+          protocol: 'data'}),
       ];
 
       const periods = NetworkMonitor.findNetworkQuietPeriods(records, 0);
@@ -441,12 +442,12 @@ describe('NetworkMonitor', () => {
         finished: false,
         url: 'https://iframe.com',
         documentURL: 'https://iframe.com',
-        responseReceivedTime: 1.2,
+        responseHeadersEndTime: 1.2,
       };
 
       const records = [
-        record({startTime: 0, endTime: 1}),
-        record({startTime: 0, endTime: 1.2, ...iframeRequest}),
+        record({networkRequestTime: 0, networkEndTime: 1}),
+        record({networkRequestTime: 0, networkEndTime: 1.2, ...iframeRequest}),
       ];
 
       const periods = NetworkMonitor.findNetworkQuietPeriods(records, 0);
@@ -462,8 +463,8 @@ describe('NetworkMonitor', () => {
       };
 
       const records = [
-        record({startTime: 0, endTime: 1}),
-        record({startTime: 0, endTime: 2, ...quicRequest}),
+        record({networkRequestTime: 0, networkEndTime: 1}),
+        record({networkRequestTime: 0, networkEndTime: 2, ...quicRequest}),
       ];
 
       const periods = NetworkMonitor.findNetworkQuietPeriods(records, 0);

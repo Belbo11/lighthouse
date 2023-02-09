@@ -8,7 +8,7 @@ import pwaDetailsExpectations from './pwa-expectations-details.js';
 
 const pwaRocksExpectations = {...pwaDetailsExpectations, hasIconsAtLeast512px: false};
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   settings: {

@@ -20,6 +20,10 @@ const stackPacksToInclude = [
     requiredStacks: ['js:wordpress'],
   },
   {
+    packId: 'wp-rocket',
+    requiredStacks: ['js:wp-rocket'],
+  },
+  {
     packId: 'ezoic',
     requiredStacks: ['js:ezoic'],
   },
@@ -63,10 +67,12 @@ const stackPacksToInclude = [
 
 /**
  * Returns all packs that match the stacks found in the page.
- * @param {LH.Artifacts['Stacks']} pageStacks
+ * @param {LH.Artifacts['Stacks']|undefined} pageStacks
  * @return {LH.RawIcu<Array<LH.Result.StackPack>>}
  */
 function getStackPacks(pageStacks) {
+  if (!pageStacks) return [];
+
   /** @type {LH.RawIcu<Array<LH.Result.StackPack>>} */
   const packs = [];
 

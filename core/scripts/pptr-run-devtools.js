@@ -25,7 +25,7 @@ import fs from 'fs';
 import readline from 'readline';
 import {fileURLToPath} from 'url';
 
-import puppeteer from 'puppeteer-core';
+import * as puppeteer from 'puppeteer-core';
 import yargs from 'yargs';
 import * as yargsHelpers from 'yargs/helpers';
 import {getChromePath} from 'chrome-launcher';
@@ -244,7 +244,7 @@ function disableLegacyNavigation() {
 
 /**
  * @param {puppeteer.CDPSession} inspectorSession
- * @param {LH.Config.Json} config
+ * @param {LH.Config} config
  */
 async function installCustomLighthouseConfig(inspectorSession, config) {
   // Prevent modification for tests that are retried.
@@ -296,7 +296,7 @@ function dismissDialog(dialog) {
 
 /**
  * @param {string} url
- * @param {{config?: LH.Config.Json, chromeFlags?: string[], useLegacyNavigation?: boolean}} [options]
+ * @param {{config?: LH.Config, chromeFlags?: string[], useLegacyNavigation?: boolean}} [options]
  * @return {Promise<{lhr: LH.Result, artifacts: LH.Artifacts, logs: string[]}>}
  */
 async function testUrlFromDevtools(url, options = {}) {
@@ -367,7 +367,7 @@ async function readUrlList() {
 async function main() {
   const chromeFlags = parseChromeFlags(argv['chromeFlags']);
   const outputDir = argv['output-dir'];
-  /** @type {LH.Config.Json=} */
+  /** @type {LH.Config=} */
   const config = argv.config ? JSON.parse(argv.config) : undefined;
 
   // Create output directory.

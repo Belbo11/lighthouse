@@ -6,7 +6,7 @@
 
 import pwaDetailsExpectations from './pwa-expectations-details.js';
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   settings: {

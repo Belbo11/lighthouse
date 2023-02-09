@@ -68,8 +68,8 @@ describe('SidebarRuntimeSettings', () => {
     } as any;
     const root = render(<SidebarRuntimeSettings settings={settings}/>, {wrapper});
 
-    expect(root.getByText('Emulated Moto G4 - 200x200, DPR 3')).toBeTruthy();
-    expect(root.queryByText('Emulated Moto G4 -')).toBeFalsy();
+    expect(root.getByText('Emulated Moto G Power - 200x200, DPR 3')).toBeTruthy();
+    expect(root.queryByText('Emulated Moto G Power -')).toBeFalsy();
     expect(root.getByText('Slow 4G throttling')).toBeTruthy();
     expect(root.getByText('4x slowdown'));
   });
@@ -110,7 +110,7 @@ describe('SidebarRuntimeSettings', () => {
     const root = render(<SidebarRuntimeSettings settings={settings}/>, {wrapper});
 
     expect(root.getByText('No emulation')).toBeTruthy();
-    expect(root.queryByText('Emulated Moto G4 -')).toBeFalsy();
+    expect(root.queryByText('Emulated Moto G Power -')).toBeFalsy();
     expect(root.getByText('Provided by environment')).toBeTruthy();
   });
 });

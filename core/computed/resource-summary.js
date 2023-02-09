@@ -4,11 +4,12 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
+import {EntityClassification} from './entity-classification.js';
 import {makeComputedArtifact} from './computed-artifact.js';
 import {NetworkRecords} from './network-records.js';
 import {NetworkRequest} from '../lib/network-request.js';
 import {Budget} from '../config/budget.js';
-import {Util} from '../util.cjs';
+import {Util} from '../../shared/util.js';
 
 /** @typedef {{count: number, resourceSize: number, transferSize: number}} ResourceEntry */
 
@@ -35,9 +36,10 @@ class ResourceSummary {
    * @param {Array<LH.Artifacts.NetworkRequest>} networkRecords
    * @param {LH.Artifacts.URL} URLArtifact
    * @param {LH.Util.ImmutableObject<LH.Budget[]|null>} budgets
+   * @param {LH.Artifacts.EntityClassification} classifiedEntities
    * @return {Record<LH.Budget.ResourceType, ResourceEntry>}
    */
-  static summarize(networkRecords, URLArtifact, budgets) {
+  static summarize(networkRecords, URLArtifact, budgets, classifiedEntities) {
     /** @type {Record<LH.Budget.ResourceType, ResourceEntry>} */
     const resourceSummary = {
       'stylesheet': {count: 0, resourceSize: 0, transferSize: 0},
@@ -56,8 +58,8 @@ class ResourceSummary {
     if (budget?.options?.firstPartyHostnames) {
       firstPartyHosts = budget.options.firstPartyHostnames;
     } else {
-      const rootDomain = Util.getRootDomain(URLArtifact.finalDisplayedUrl);
-      firstPartyHosts = [`*.${rootDomain}`];
+      firstPartyHosts = classifiedEntities.firstParty?.domains.map(domain => `*.${domain}`) ||
+        [`*.${Util.getRootDomain(URLArtifact.finalDisplayedUrl)}`];
     }
 
     networkRecords.filter(record => {
@@ -105,7 +107,9 @@ class ResourceSummary {
    */
   static async compute_(data, context) {
     const networkRecords = await NetworkRecords.request(data.devtoolsLog, context);
-    return ResourceSummary.summarize(networkRecords, data.URL, data.budgets);
+    const classifiedEntities = await EntityClassification.request(
+      {URL: data.URL, devtoolsLog: data.devtoolsLog}, context);
+    return ResourceSummary.summarize(networkRecords, data.URL, data.budgets, classifiedEntities);
   }
 }
 

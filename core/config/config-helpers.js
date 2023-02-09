@@ -364,18 +364,18 @@ function resolveSettings(settingsJson = {}, overrides = undefined) {
 }
 
 /**
- * @param {LH.Config.Json} configJSON
+ * @param {LH.Config} config
  * @param {string | undefined} configDir
  * @param {{plugins?: string[]} | undefined} flags
- * @return {Promise<LH.Config.Json>}
+ * @return {Promise<LH.Config>}
  */
-async function mergePlugins(configJSON, configDir, flags) {
-  const configPlugins = configJSON.plugins || [];
+async function mergePlugins(config, configDir, flags) {
+  const configPlugins = config.plugins || [];
   const flagPlugins = flags?.plugins || [];
   const pluginNames = new Set([...configPlugins, ...flagPlugins]);
 
   for (const pluginName of pluginNames) {
-    validation.assertValidPluginName(configJSON, pluginName);
+    validation.assertValidPluginName(config, pluginName);
 
     // In bundled contexts, `resolveModulePath` will fail, so use the raw pluginName directly.
     const pluginPath = isBundledEnvironment() ?
@@ -384,10 +384,10 @@ async function mergePlugins(configJSON, configDir, flags) {
     const rawPluginJson = await requireWrapper(pluginPath);
     const pluginJson = ConfigPlugin.parsePlugin(rawPluginJson, pluginName);
 
-    configJSON = mergeConfigFragment(configJSON, pluginJson);
+    config = mergeConfigFragment(config, pluginJson);
   }
 
-  return configJSON;
+  return config;
 }
 
 
@@ -428,7 +428,7 @@ async function resolveGathererToDefn(gathererJson, coreGathererList, configDir) 
  * Take an array of audits and audit paths and require any paths (possibly
  * relative to the optional `configDir`) using `resolveModule`,
  * leaving only an array of AuditDefns.
- * @param {LH.Config.Json['audits']} audits
+ * @param {LH.Config['audits']} audits
  * @param {string=} configDir
  * @return {Promise<Array<LH.Config.AuditDefn>|null>}
  */
@@ -585,10 +585,10 @@ function deepClone(json) {
 }
 
 /**
- * Deep clone a ConfigJson, copying over any "live" gatherer or audit that
+ * Deep clone a config, copying over any "live" gatherer or audit that
  * wouldn't make the JSON round trip.
- * @param {LH.Config.Json} json
- * @return {LH.Config.Json}
+ * @param {LH.Config} json
+ * @return {LH.Config}
  */
 function deepCloneConfigJson(json) {
   const cloned = deepClone(json);

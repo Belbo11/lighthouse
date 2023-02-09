@@ -31,6 +31,7 @@ jobs:
         node-version: 16.x
 
     - run: yarn install --frozen-lockfile --network-timeout 1000000
+    - run: yarn type-check
     - run: yarn build-all
 
     # Run pptr tests using ToT Chrome instead of stable default.
@@ -53,13 +54,11 @@ jobs:
 
     - run: yarn diff:sample-json
     - run: yarn diff:flow-sample-json
-    - run: yarn type-check
     - run: yarn lint
     - run: yarn test-lantern
     - run: yarn test-legacy-javascript
     - run: yarn i18n:checks
     - run: yarn dogfood-lhci
-    - run: bash core/scripts/copy-util-commonjs.sh
 
     # Fail if any changes were written to any source files or generated untracked files (ex, from: build/build-cdt-lib.js).
     - run: git add -A && git diff --cached --exit-code

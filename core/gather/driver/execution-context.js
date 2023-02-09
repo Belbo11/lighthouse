@@ -6,6 +6,7 @@
 
 /* global window */
 
+import * as LH from '../../../types/lh.js';
 import {pageFunctions} from '../../lib/page-functions.js';
 
 class ExecutionContext {
@@ -61,8 +62,8 @@ class ExecutionContext {
     await this._session.sendCommand('Page.enable');
     await this._session.sendCommand('Runtime.enable');
 
-    const resourceTreeResponse = await this._session.sendCommand('Page.getResourceTree');
-    const mainFrameId = resourceTreeResponse.frameTree.frame.id;
+    const frameTreeResponse = await this._session.sendCommand('Page.getFrameTree');
+    const mainFrameId = frameTreeResponse.frameTree.frame.id;
 
     const isolatedWorldResponse = await this._session.sendCommand('Page.createIsolatedWorld', {
       frameId: mainFrameId,
@@ -232,13 +233,6 @@ class ExecutionContext {
       window.__nativeFetch = window.fetch;
       window.__ElementMatches = window.Element.prototype.matches;
       window.__HTMLElementBoundingClientRect = window.HTMLElement.prototype.getBoundingClientRect;
-      // Ensure the native `performance.now` is not overwritable.
-      const performance = window.performance;
-      const performanceNow = window.performance.now;
-      Object.defineProperty(performance, 'now', {
-        value: () => performanceNow.call(performance),
-        writable: false,
-      });
       /* c8 ignore stop */
     }, {args: []});
   }

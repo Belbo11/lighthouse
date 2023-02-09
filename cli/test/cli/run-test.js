@@ -13,7 +13,7 @@ import {parseChromeFlags} from '../../run.js';
 import {getFlags} from '../../cli-flags.js';
 import {LH_ROOT} from '../../../root.js';
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const testConfig = {
   'extends': 'lighthouse:default',
   'settings': {

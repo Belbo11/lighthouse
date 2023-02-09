@@ -221,12 +221,15 @@ function getRendererFormattedStrings(locale) {
 
   // If `localeMessages` is empty in the bundled and DEFAULT_LOCALE case, this
   // will be empty and the report will fall back to the util UIStrings for these.
-  const icuMessageIds = Object.keys(localeMessages).filter(f => f.startsWith('report/'));
+  const icuMessageIds = Object.keys(localeMessages)
+    .filter(f => f.startsWith('report/renderer/report-utils.js'));
   /** @type {Record<string, string>} */
   const strings = {};
   for (const icuMessageId of icuMessageIds) {
     const {filename, key} = getIcuMessageIdParts(icuMessageId);
-    if (!filename.endsWith('util.js')) throw new Error(`Unexpected message: ${icuMessageId}`);
+    if (!filename.endsWith('report-utils.js')) {
+      throw new Error(`Unexpected message: ${icuMessageId}`);
+    }
 
     strings[key] = localeMessages[icuMessageId].message;
   }

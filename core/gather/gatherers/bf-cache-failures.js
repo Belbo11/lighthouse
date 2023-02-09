@@ -9,6 +9,7 @@ import {waitForFrameNavigated, waitForLoadEvent} from '../driver/wait-for-condit
 import DevtoolsLog from './devtools-log.js';
 
 const FAILURE_EVENT_TIMEOUT = 100;
+const TEMP_PAGE_PAUSE_TIMEOUT = 100;
 
 class BFCacheFailures extends FRGatherer {
   /** @type {LH.Gatherer.GathererMeta<'DevtoolsLog'>} */
@@ -109,7 +110,9 @@ class BFCacheFailures extends FRGatherer {
     // https://github.com/GoogleChrome/lighthouse/issues/14665
     await Promise.all([
       session.sendCommand('Page.navigate', {url: 'chrome://terms'}),
-      waitForLoadEvent(session, 0).promise,
+      // DevTools e2e tests can sometimes fail on the next command if we progress too fast.
+      // The only reliable way to prevent this is to wait for an arbitrary period of time after load.
+      waitForLoadEvent(session, TEMP_PAGE_PAUSE_TIMEOUT).promise,
     ]);
 
     const [, frameNavigatedEvent] = await Promise.all([

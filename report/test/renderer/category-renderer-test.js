@@ -8,12 +8,13 @@ import assert from 'assert/strict';
 
 import jsdom from 'jsdom';
 
-import {Util} from '../../renderer/util.js';
-import {I18n} from '../../renderer/i18n.js';
+import {ReportUtils} from '../../renderer/report-utils.js';
+import {I18nFormatter} from '../../renderer/i18n-formatter.js';
 import {DOM} from '../../renderer/dom.js';
 import {DetailsRenderer} from '../../renderer/details-renderer.js';
 import {CategoryRenderer} from '../../renderer/category-renderer.js';
 import {readJson} from '../../../core/test/test-utils.js';
+import {Globals} from '../../renderer/report-globals.js';
 
 const sampleResultsOrig = readJson('../../../core/test/results/sample_v2.json', import.meta);
 
@@ -22,18 +23,22 @@ describe('CategoryRenderer', () => {
   let sampleResults;
 
   before(() => {
-    Util.i18n = new I18n('en', {...Util.UIStrings});
+    Globals.apply({
+      providedStrings: {},
+      i18n: new I18nFormatter('en'),
+      reportJson: null,
+    });
 
     const {document} = new jsdom.JSDOM().window;
     const dom = new DOM(document);
     const detailsRenderer = new DetailsRenderer(dom);
     renderer = new CategoryRenderer(dom, detailsRenderer);
 
-    sampleResults = Util.prepareReportResult(sampleResultsOrig);
+    sampleResults = ReportUtils.prepareReportResult(sampleResultsOrig);
   });
 
   after(() => {
-    Util.i18n = undefined;
+    Globals.i18n = undefined;
   });
 
   it('renders an audit', () => {

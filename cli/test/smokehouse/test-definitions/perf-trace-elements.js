@@ -4,7 +4,7 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   settings: {
@@ -90,12 +90,12 @@ const expectations = {
             top: 465,
             bottom: 502,
             left: 8,
-            right: 352,
-            width: 344,
+            right: 404,
+            width: 396,
             height: 37,
           },
         },
-        score: '0.058 +/- 0.01',
+        score: '0.035 +/- 0.01',
       },
       {
         traceEventType: 'layout-shift',
@@ -106,12 +106,12 @@ const expectations = {
             top: 426,
             bottom: 444,
             left: 8,
-            right: 352,
-            width: 344,
+            right: 404,
+            width: 396,
             height: 18,
           },
         },
-        score: '0.026 +/- 0.01',
+        score: '0.017 +/- 0.01',
       },
       {
         traceEventType: 'animation',
@@ -191,7 +191,7 @@ const expectations = {
           },
         },
       },
-      'preload-lcp-image': {
+      'prioritize-lcp-image': {
         score: 1,
         numericValue: 0,
         details: {

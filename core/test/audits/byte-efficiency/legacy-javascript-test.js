@@ -140,14 +140,14 @@ describe('LegacyJavaScript audit', () => {
   it('fails code with multiple legacy polyfills', async () => {
     const result = await getResult([
       {
-        code: 'String.prototype.repeat = function() {}; Array.prototype.includes = function() {}',
+        code: 'String.prototype.repeat = function() {}; Array.prototype.forEach = function() {}',
         url: 'https://www.example.com/a.js',
       },
     ]);
     expect(result.items).toHaveLength(1);
     expect(result.items[0].subItems.items).toMatchObject([
       {signal: 'String.prototype.repeat'},
-      {signal: 'Array.prototype.includes'},
+      {signal: 'Array.prototype.forEach'},
     ]);
   });
 

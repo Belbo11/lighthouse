@@ -59,7 +59,7 @@ function getElementsInDocument(selector) {
 
   /** @param {NodeListOf<Element>} nodes */
   const _findAllElements = nodes => {
-    for (let i = 0, el; el = nodes[i]; ++i) {
+    for (const el of nodes) {
       if (!selector || realMatchesFn.call(el, selector)) {
         /** @type {ParseSelector<T>} */
         // @ts-expect-error - el is verified as matching above, tsc just can't verify it through the .call().
@@ -265,7 +265,7 @@ function getNodePath(node) {
     }
     let index = 0;
     let prevNode;
-    while (prevNode = node.previousSibling) {
+    while (prevNode = node.previousSibling) { // eslint-disable-line no-cond-assign
       node = prevNode;
       // skip empty text nodes
       if (node.nodeType === Node.TEXT_NODE && (node.nodeValue || '').trim().length === 0) continue;

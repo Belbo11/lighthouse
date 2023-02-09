@@ -18,16 +18,16 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
   function createRecord(opts) {
     const url = opts.url || 'https://example.com';
-    if (opts.startTime) opts.startTime *= 1000;
-    if (opts.endTime) opts.endTime *= 1000;
+    if (opts.networkRequestTime) opts.networkRequestTime *= 1000;
+    if (opts.networkEndTime) opts.networkEndTime *= 1000;
     return Object.assign(
       {
         url,
         requestId: recordId++,
         connectionId: 0,
         connectionReused: false,
-        startTime: 10,
-        endTime: 10,
+        networkRequestTime: 10,
+        networkEndTime: 10,
         transferSize: 0,
         protocol: 'http/1.1',
         parsedURL: {scheme: url.match(/https?/)[0], securityOrigin: url.match(/.*\.com/)[0]},
@@ -63,10 +63,10 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
     it('should estimate values when not trustworthy (duplicate IDs)', () => {
       const records = [
-        createRecord({requestId: 1, startTime: 0, endTime: 15}),
-        createRecord({requestId: 2, startTime: 10, endTime: 25}),
-        createRecord({requestId: 3, startTime: 20, endTime: 40}),
-        createRecord({requestId: 4, startTime: 30, endTime: 40}),
+        createRecord({requestId: 1, networkRequestTime: 0, networkEndTime: 15}),
+        createRecord({requestId: 2, networkRequestTime: 10, networkEndTime: 25}),
+        createRecord({requestId: 3, networkRequestTime: 20, networkEndTime: 40}),
+        createRecord({requestId: 4, networkRequestTime: 30, networkEndTime: 40}),
       ];
 
       const result = NetworkAnalyzer.estimateIfConnectionWasReused(records);
@@ -80,29 +80,29 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
           requestId: 1,
           connectionId: 1,
           connectionReused: true,
-          startTime: 0,
-          endTime: 15,
+          networkRequestTime: 0,
+          networkEndTime: 15,
         }),
         createRecord({
           requestId: 2,
           connectionId: 1,
           connectionReused: true,
-          startTime: 10,
-          endTime: 25,
+          networkRequestTime: 10,
+          networkEndTime: 25,
         }),
         createRecord({
           requestId: 3,
           connectionId: 1,
           connectionReused: true,
-          startTime: 20,
-          endTime: 40,
+          networkRequestTime: 20,
+          networkEndTime: 40,
         }),
         createRecord({
           requestId: 4,
           connectionId: 2,
           connectionReused: false,
-          startTime: 30,
-          endTime: 40,
+          networkRequestTime: 30,
+          networkEndTime: 40,
         }),
       ];
 
@@ -113,10 +113,10 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
     it('should estimate with earliest allowed reuse', () => {
       const records = [
-        createRecord({requestId: 1, startTime: 0, endTime: 40}),
-        createRecord({requestId: 2, startTime: 10, endTime: 15}),
-        createRecord({requestId: 3, startTime: 20, endTime: 30}),
-        createRecord({requestId: 4, startTime: 35, endTime: 40}),
+        createRecord({requestId: 1, networkRequestTime: 0, networkEndTime: 40}),
+        createRecord({requestId: 2, networkRequestTime: 10, networkEndTime: 15}),
+        createRecord({requestId: 3, networkRequestTime: 20, networkEndTime: 30}),
+        createRecord({requestId: 4, networkRequestTime: 35, networkEndTime: 40}),
       ];
 
       const result = NetworkAnalyzer.estimateIfConnectionWasReused(records);
@@ -137,7 +137,7 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
   describe('#estimateRTTByOrigin', () => {
     it('should infer from tcp timing when available', () => {
       const timing = {connectStart: 1, connectEnd: 100};
-      const record = createRecord({startTime: 0, endTime: 1, timing});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
       const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
       const expected = {min: 99, max: 99, avg: 99, median: 99};
       assert.deepStrictEqual(result.get('https://example.com'), expected);
@@ -148,7 +148,7 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
       // this record took 150ms before Chrome could send the request
       // i.e. DNS (maybe) + queuing (maybe) + TCP handshake took ~100ms
       // 150ms / 3 round trips ~= 50ms RTT
-      const record = createRecord({startTime: 0, endTime: 1, timing});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
       const result = NetworkAnalyzer.estimateRTTByOrigin([record], {coarseEstimateMultiplier: 1});
       const expected = {min: 50, max: 50, avg: 50, median: 50};
       assert.deepStrictEqual(result.get('https://example.com'), expected);
@@ -159,7 +159,8 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
       // this record took 1000ms after the first byte was received to download the payload
       // i.e. it took at least one full additional roundtrip after first byte to download the rest
       // 1000ms / 1 round trip ~= 1000ms RTT
-      const record = createRecord({startTime: 0, endTime: 1.1, transferSize: 28 * 1024, timing});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1.1,
+        transferSize: 28 * 1024, timing});
       const result = NetworkAnalyzer.estimateRTTByOrigin([record], {
         coarseEstimateMultiplier: 1,
         useHeadersEndEstimates: false,
@@ -170,7 +171,8 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
     it('should infer from TTFB when available', () => {
       const timing = {receiveHeadersEnd: 1000};
-      const record = createRecord({startTime: 0, endTime: 1, timing, resourceType: 'Other'});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing,
+        resourceType: 'Other'});
       const result = NetworkAnalyzer.estimateRTTByOrigin([record], {
         coarseEstimateMultiplier: 1,
       });
@@ -185,10 +187,11 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
     it('should handle untrustworthy connection information', () => {
       const timing = {sendStart: 150};
-      const recordA = createRecord({startTime: 0, endTime: 1, timing, connectionReused: true});
+      const recordA = createRecord({networkRequestTime: 0, networkEndTime: 1, timing,
+        connectionReused: true});
       const recordB = createRecord({
-        startTime: 0,
-        endTime: 1,
+        networkRequestTime: 0,
+        networkEndTime: 1,
         timing,
         connectionId: 2,
         connectionReused: true,
@@ -225,7 +228,7 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
   describe('#estimateServerResponseTimeByOrigin', () => {
     it('should estimate server response time using ttfb times', () => {
       const timing = {sendEnd: 100, receiveHeadersEnd: 200};
-      const record = createRecord({startTime: 0, endTime: 1, timing});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
       const rttByOrigin = new Map([[NetworkAnalyzer.SUMMARY, 0]]);
       const result = NetworkAnalyzer.estimateServerResponseTimeByOrigin([record], {rttByOrigin});
       const expected = {min: 100, max: 100, avg: 100, median: 100};
@@ -234,7 +237,7 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
     it('should subtract out rtt', () => {
       const timing = {sendEnd: 100, receiveHeadersEnd: 200};
-      const record = createRecord({startTime: 0, endTime: 1, timing});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
       const rttByOrigin = new Map([[NetworkAnalyzer.SUMMARY, 50]]);
       const result = NetworkAnalyzer.estimateServerResponseTimeByOrigin([record], {rttByOrigin});
       const expected = {min: 50, max: 50, avg: 50, median: 50};
@@ -243,7 +246,7 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
     it('should compute rtts when not provided', () => {
       const timing = {connectStart: 5, connectEnd: 55, sendEnd: 100, receiveHeadersEnd: 200};
-      const record = createRecord({startTime: 0, endTime: 1, timing});
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
       const result = NetworkAnalyzer.estimateServerResponseTimeByOrigin([record]);
       const expected = {min: 50, max: 50, avg: 50, median: 50};
       assert.deepStrictEqual(result.get('https://example.com'), expected);
@@ -276,11 +279,11 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
   describe('#estimateThroughput', () => {
     const estimateThroughput = NetworkAnalyzer.estimateThroughput;
 
-    function createThroughputRecord(responseReceivedTimeInS, endTimeInS, extras) {
+    function createThroughputRecord(responseHeadersEndTimeInS, networkEndTimeInS, extras) {
       return Object.assign(
         {
-          responseReceivedTime: responseReceivedTimeInS * 1000,
-          endTime: endTimeInS * 1000,
+          responseHeadersEndTime: responseHeadersEndTimeInS * 1000,
+          networkEndTime: networkEndTimeInS * 1000,
           transferSize: 1000,
           finished: true,
           failed: false,

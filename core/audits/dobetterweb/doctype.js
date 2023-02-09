@@ -18,10 +18,10 @@ const UIStrings = {
     '[Learn more about the doctype declaration](https://developer.chrome.com/docs/lighthouse/best-practices/doctype/).',
   /** Explanatory message stating that the document has no doctype. */
   explanationNoDoctype: 'Document must contain a doctype',
-  /** Explanatory message stating that the document has wrong doctype */
-  explanationWrongDoctype: 'Document contains a doctype that triggers quirks-mode',
-  /** Explanatory message stating that the document has wrong doctype */
-  explanationLimitedQuirks: 'Document contains a doctype that triggers limited-quirks-mode',
+  /** Explanatory message stating that the document has wrong doctype that triggers `quirks-mode` */
+  explanationWrongDoctype: 'Document contains a `doctype` that triggers `quirks-mode`',
+  /** Explanatory message stating that the document has wrong doctype that triggers `limited-quirks-mode` */
+  explanationLimitedQuirks: 'Document contains a `doctype` that triggers `limited-quirks-mode`',
   /** Explanatory message stating that the publicId field is not empty. */
   explanationPublicId: 'Expected publicId to be an empty string',
   /** Explanatory message stating that the systemId field is not empty. */

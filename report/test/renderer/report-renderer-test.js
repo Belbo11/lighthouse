@@ -9,7 +9,7 @@ import assert from 'assert/strict';
 import jsdom from 'jsdom';
 import jestMock from 'jest-mock';
 
-import {Util} from '../../renderer/util.js';
+import {ReportUtils} from '../../renderer/report-utils.js';
 import {DOM} from '../../renderer/dom.js';
 import {DetailsRenderer} from '../../renderer/details-renderer.js';
 import {CategoryRenderer} from '../../renderer/category-renderer.js';
@@ -41,7 +41,7 @@ describe('ReportRenderer', () => {
     const detailsRenderer = new DetailsRenderer(dom);
     const categoryRenderer = new CategoryRenderer(dom, detailsRenderer);
     renderer = new ReportRenderer(dom, categoryRenderer);
-    sampleResults = Util.prepareReportResult(sampleResultsOrig);
+    sampleResults = ReportUtils.prepareReportResult(sampleResultsOrig);
   });
 
   after(() => {
@@ -217,11 +217,11 @@ describe('ReportRenderer', () => {
       expect(items.length).toBeGreaterThanOrEqual(6);
 
       const itemsTxt = items.map(el => `${el.textContent} ${el.title}`).join('\n');
-      expect(itemsTxt).toContain('Moto G4');
+      expect(itemsTxt).toContain('Moto G Power');
       expect(itemsTxt).toContain('RTT');
       expect(itemsTxt).toMatch(/\dx/);
       expect(itemsTxt).toContain(sampleResults.environment.networkUserAgent);
-      expect(itemsTxt).toMatch('360x640, DPR 2.625');
+      expect(itemsTxt).toMatch('412x823, DPR 1.75');
     });
   });
 

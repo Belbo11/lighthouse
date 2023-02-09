@@ -95,8 +95,8 @@ class NetworkMonitor extends NetworkMonitorEventEmitter {
     const frameNavigations = this._frameNavigations;
     if (!frameNavigations.length) return {};
 
-    const resourceTreeResponse = await this._session.sendCommand('Page.getResourceTree');
-    const mainFrameId = resourceTreeResponse.frameTree.frame.id;
+    const frameTreeResponse = await this._session.sendCommand('Page.getFrameTree');
+    const mainFrameId = frameTreeResponse.frameTree.frame.id;
     const mainFrameNavigations = frameNavigations.filter(frame => frame.id === mainFrameId);
     if (!mainFrameNavigations.length) log.warn('NetworkMonitor', 'No detected navigations');
 
@@ -218,9 +218,9 @@ class NetworkMonitor extends NetworkMonitorEventEmitter {
       if (request.protocol === 'ws' || request.protocol === 'wss') return;
 
       // convert the network timestamp to ms
-      timeBoundaries.push({time: request.startTime * 1000, isStart: true});
+      timeBoundaries.push({time: request.networkRequestTime * 1000, isStart: true});
       if (request.finished) {
-        timeBoundaries.push({time: request.endTime * 1000, isStart: false});
+        timeBoundaries.push({time: request.networkEndTime * 1000, isStart: false});
       }
     });
 

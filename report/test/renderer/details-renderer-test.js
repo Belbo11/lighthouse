@@ -9,9 +9,9 @@ import assert from 'assert/strict';
 import jsdom from 'jsdom';
 
 import {DOM} from '../../renderer/dom.js';
-import {Util} from '../../renderer/util.js';
-import {I18n} from '../../renderer/i18n.js';
+import {I18nFormatter} from '../../renderer/i18n-formatter.js';
 import {DetailsRenderer} from '../../renderer/details-renderer.js';
+import {Globals} from '../../renderer/report-globals.js';
 
 describe('DetailsRenderer', () => {
   let renderer;
@@ -23,12 +23,16 @@ describe('DetailsRenderer', () => {
   }
 
   before(() => {
-    Util.i18n = new I18n('en', {...Util.UIStrings});
+    Globals.apply({
+      providedStrings: {},
+      i18n: new I18nFormatter('en'),
+      reportJson: null,
+    });
     createRenderer();
   });
 
   after(() => {
-    Util.i18n = undefined;
+    Globals.i18n = undefined;
   });
 
   describe('render', () => {

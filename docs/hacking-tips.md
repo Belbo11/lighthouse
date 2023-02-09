@@ -39,17 +39,16 @@ This will generate new reports from the same results json.
 
 ```sh
 # capture some results first:
-lighthouse --output=json http://example.com > temp.report.json
+lighthouse http://example.com --output=json > temp.report.json
 
 # quickly generate reports:
 node generate_report.js > temp.report.html; open temp.report.html
 ```
 ```js
 // generate_report.js
-'use strict';
 
-const ReportGenerator = require('./report/generator/report-generator.js');
-const results = require('./temp.report.json');
+import {ReportGenerator} from './report/generator/report-generator.js';
+import results from './temp.report.json' assert { type: 'json' };
 const html = ReportGenerator.generateReportHtml(results);
 
 console.log(html);

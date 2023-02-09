@@ -4,6 +4,7 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
+import * as LH from '../../../types/lh.js';
 import {BaseNode} from './base-node.js';
 import {NetworkRequest} from '../network-request.js';
 
@@ -25,14 +26,14 @@ class NetworkNode extends BaseNode {
    * @return {number}
    */
   get startTime() {
-    return this._record.startTime * 1000;
+    return this._record.networkRequestTime * 1000;
   }
 
   /**
    * @return {number}
    */
   get endTime() {
-    return this._record.endTime * 1000;
+    return this._record.networkEndTime * 1000;
   }
 
   /**

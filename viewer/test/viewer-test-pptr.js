@@ -32,7 +32,7 @@ describe('Lighthouse Viewer', () => {
   let browser;
   /** @type {import('puppeteer').Page} */
   let viewerPage;
-  const pageErrors = [];
+  let pageErrors = [];
 
   const selectors = {
     audits: '.lh-audit, .lh-metric',
@@ -69,14 +69,27 @@ describe('Lighthouse Viewer', () => {
   });
 
   after(async function() {
-    // Log any page load errors encountered in case before() failed.
-    // eslint-disable-next-line no-console
-    if (pageErrors.length > 0) console.error(pageErrors);
-
     await Promise.all([
       server.close(),
       browser && browser.close(),
     ]);
+  });
+
+  beforeEach(async function() {
+    pageErrors = [];
+  });
+
+  async function ensureNoErrors() {
+    await viewerPage.evaluate(() => new Promise(window.requestAnimationFrame));
+    const theErrors = pageErrors;
+    pageErrors = [];
+    expect(theErrors).toHaveLength(0);
+  }
+
+  afterEach(async function() {
+    // Tests should call this themselves so the failure is associated with them in the test report,
+    // but just in case one is missed it won't hurt to repeat the check here.
+    await ensureNoErrors();
   });
 
   describe('Renders the flow report', () => {
@@ -88,7 +101,7 @@ describe('Lighthouse Viewer', () => {
     });
 
     it('should load with no errors', async () => {
-      assert.deepStrictEqual(pageErrors, []);
+      await ensureNoErrors();
     });
 
     it('renders the summary page', async () => {
@@ -100,7 +113,7 @@ describe('Lighthouse Viewer', () => {
       );
       assert.equal(scores.length, 14);
 
-      assert.deepStrictEqual(pageErrors, []);
+      await ensureNoErrors();
     });
   });
 
@@ -113,7 +126,7 @@ describe('Lighthouse Viewer', () => {
     });
 
     it('should load with no errors', async () => {
-      assert.deepStrictEqual(pageErrors, []);
+      await ensureNoErrors();
     });
 
     it('should contain all categories', async () => {
@@ -251,6 +264,30 @@ describe('Lighthouse Viewer', () => {
     });
   });
 
+  describe('Renders old reports', () => {
+    [
+      'lhr-3.0.0.json',
+      'lhr-4.3.0.json',
+      'lhr-5.0.0.json',
+      'lhr-6.0.0.json',
+      'lhr-8.5.0.json',
+    ].forEach((testFilename) => {
+      it(`[${testFilename}] should load with no errors`, async () => {
+        await viewerPage.goto(viewerUrl, {waitUntil: 'networkidle2', timeout: 30000});
+        const fileInput = await viewerPage.$('#hidden-file-input');
+        const waitForAck = viewerPage.evaluate(() =>
+          new Promise(resolve =>
+            document.addEventListener('lh-file-upload-test-ack', resolve, {once: true})));
+        await fileInput.uploadFile(`${LH_ROOT}/report/test-assets/${testFilename}`);
+        await Promise.race([
+          waitForAck,
+          new Promise((resolve, reject) => setTimeout(reject, 5_000)),
+        ]);
+        await ensureNoErrors();
+      });
+    });
+  });
+
   describe('PSI', () => {
     /** @type {Partial<puppeteer.ResponseForRequest>} */
     let interceptedRequest;
@@ -351,7 +388,7 @@ describe('Lighthouse Viewer', () => {
       expect(interceptedUrl.searchParams.getAll('category').sort()).toEqual(defaultCategories);
 
       // No errors.
-      assert.deepStrictEqual(pageErrors, []);
+      await ensureNoErrors();
 
       // All categories.
       const categoryElementIds = await getCategoryElementsIds();
@@ -395,7 +432,7 @@ describe('Lighthouse Viewer', () => {
       });
 
       // No errors.
-      assert.deepStrictEqual(pageErrors, []);
+      await ensureNoErrors();
     });
 
     it('should handle errors from the API', async () => {
@@ -412,6 +449,7 @@ describe('Lighthouse Viewer', () => {
       // One error.
       expect(pageErrors).toHaveLength(1);
       expect(pageErrors[0].message).toContain('badPsiResponse error');
+      pageErrors = [];
     });
   });
 });

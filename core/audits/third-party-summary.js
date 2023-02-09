@@ -5,8 +5,8 @@
  */
 
 import {Audit} from './audit.js';
+import {EntityClassification} from '../computed/entity-classification.js';
 import * as i18n from '../lib/i18n/i18n.js';
-import thirdPartyWeb from '../lib/third-party-web.js';
 import {NetworkRecords} from '../computed/network-records.js';
 import {MainThreadTasks} from '../computed/main-thread-tasks.js';
 import {getJavaScriptURLs, getAttributableURLForTask} from '../lib/tracehouse/task-summary.js';
@@ -33,8 +33,6 @@ const str_ = i18n.createIcuMessageFn(import.meta.url, UIStrings);
 // A page passes when all third-party code blocks for less than 250 ms.
 const PASS_THRESHOLD_IN_MS = 250;
 
-/** @typedef {import("third-party-web").IEntity} ThirdPartyEntity */
-
 /**
  * @typedef Summary
  * @property {number} mainThreadTime
@@ -50,9 +48,9 @@ const PASS_THRESHOLD_IN_MS = 250;
  */
 
 /** @typedef SummaryMaps
- * @property {Map<ThirdPartyEntity, Summary>} byEntity Map of impact summaries for each entity.
+ * @property {Map<LH.Artifacts.Entity, Summary>} byEntity Map of impact summaries for each entity.
  * @property {Map<string, Summary>} byURL Map of impact summaries for each URL.
- * @property {Map<ThirdPartyEntity, string[]>} urls Map of URLs under each entity.
+ * @property {Map<LH.Artifacts.Entity, string[]>} urls Map of URLs under each entity.
  */
 
 /**
@@ -83,12 +81,13 @@ class ThirdPartySummary extends Audit {
    * @param {Array<LH.Artifacts.NetworkRequest>} networkRecords
    * @param {Array<LH.Artifacts.TaskNode>} mainThreadTasks
    * @param {number} cpuMultiplier
+   * @param {LH.Artifacts.EntityClassification} entityClassification
    * @return {SummaryMaps}
    */
-  static getSummaries(networkRecords, mainThreadTasks, cpuMultiplier) {
+  static getSummaries(networkRecords, mainThreadTasks, cpuMultiplier, entityClassification) {
     /** @type {Map<string, Summary>} */
     const byURL = new Map();
-    /** @type {Map<ThirdPartyEntity, Summary>} */
+    /** @type {Map<LH.Artifacts.Entity, Summary>} */
     const byEntity = new Map();
     const defaultSummary = {mainThreadTime: 0, blockingTime: 0, transferSize: 0};
 
@@ -114,11 +113,11 @@ class ThirdPartySummary extends Audit {
       byURL.set(attributableURL, urlSummary);
     }
 
-    // Map each URL's stat to a particular third party entity.
-    /** @type {Map<ThirdPartyEntity, string[]>} */
+    // Map each URL's stat to a particular entity.
+    /** @type {Map<LH.Artifacts.Entity, string[]>} */
     const urls = new Map();
     for (const [url, urlSummary] of byURL.entries()) {
-      const entity = thirdPartyWeb.getEntity(url);
+      const entity = entityClassification.entityByUrl.get(url);
       if (!entity) {
         byURL.delete(url);
         continue;
@@ -139,7 +138,7 @@ class ThirdPartySummary extends Audit {
   }
 
   /**
-   * @param {ThirdPartyEntity} entity
+   * @param {LH.Artifacts.Entity} entity
    * @param {SummaryMaps} summaries
    * @param {Summary} stats
    * @return {Array<URLSummary>}
@@ -197,29 +196,28 @@ class ThirdPartySummary extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const networkRecords = await NetworkRecords.request(devtoolsLog, context);
-    const mainEntity = thirdPartyWeb.getEntity(artifacts.URL.finalDisplayedUrl);
+    const classifiedEntities = await EntityClassification.request(
+      {URL: artifacts.URL, devtoolsLog}, context);
+    const firstPartyEntity = classifiedEntities.firstParty;
     const tasks = await MainThreadTasks.request(trace, context);
     const multiplier = settings.throttlingMethod === 'simulate' ?
       settings.throttling.cpuSlowdownMultiplier : 1;
 
-    const summaries = ThirdPartySummary.getSummaries(networkRecords, tasks, multiplier);
+    const summaries = ThirdPartySummary.getSummaries(
+      networkRecords, tasks, multiplier, classifiedEntities);
     const overallSummary = {wastedBytes: 0, wastedMs: 0};
 
     const results = Array.from(summaries.byEntity.entries())
       // Don't consider the page we're on to be third-party.
       // e.g. Facebook SDK isn't a third-party script on facebook.com
-      .filter(([entity]) => !(mainEntity && mainEntity.name === entity.name))
+      .filter(([entity]) => !(firstPartyEntity && firstPartyEntity === entity))
       .map(([entity, stats]) => {
         overallSummary.wastedBytes += stats.transferSize;
         overallSummary.wastedMs += stats.blockingTime;
 
         return {
           ...stats,
-          entity: {
-            type: /** @type {const} */ ('link'),
-            text: entity.name,
-            url: entity.homepage || '',
-          },
+          entity: entity.name,
           subItems: {
             type: /** @type {const} */ ('subitems'),
             items: ThirdPartySummary.makeSubItems(entity, summaries, stats),
@@ -232,7 +230,7 @@ class ThirdPartySummary extends Audit {
     /** @type {LH.Audit.Details.Table['headings']} */
     const headings = [
       /* eslint-disable max-len */
-      {key: 'entity', valueType: 'link', label: str_(UIStrings.columnThirdParty), subItemsHeading: {key: 'url', valueType: 'url'}},
+      {key: 'entity', valueType: 'text', label: str_(UIStrings.columnThirdParty), subItemsHeading: {key: 'url', valueType: 'url'}},
       {key: 'transferSize', granularity: 1, valueType: 'bytes', label: str_(i18n.UIStrings.columnTransferSize), subItemsHeading: {key: 'transferSize'}},
       {key: 'blockingTime', granularity: 1, valueType: 'ms', label: str_(i18n.UIStrings.columnBlockingTime), subItemsHeading: {key: 'blockingTime'}},
       /* eslint-enable max-len */

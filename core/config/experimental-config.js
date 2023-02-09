@@ -9,7 +9,7 @@
  * being enabled by default.
  */
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   audits: [

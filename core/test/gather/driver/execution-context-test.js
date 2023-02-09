@@ -44,7 +44,7 @@ describe('ExecutionContext', () => {
       executionContext._session.sendCommand = createMockSendCommandFn()
         .mockResponse('Page.enable')
         .mockResponse('Runtime.enable')
-        .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1337'}}})
+        .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1337'}}})
         .mockResponse('Page.createIsolatedWorld', {executionContextId})
         .mockResponse('Runtime.evaluate', {result: {value: 2}});
 
@@ -144,7 +144,7 @@ describe('.evaluateAsync', () => {
     let sendCommand = (sessionMock.sendCommand = createMockSendCommandFn()
       .mockResponse('Page.enable')
       .mockResponse('Runtime.enable')
-      .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1337'}}})
+      .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1337'}}})
       .mockResponse('Page.createIsolatedWorld', {executionContextId: 1})
       .mockResponse('Runtime.evaluate', {result: {value: 2}}));
 
@@ -175,12 +175,12 @@ describe('.evaluateAsync', () => {
     sessionMock.sendCommand = createMockSendCommandFn()
       .mockResponse('Page.enable')
       .mockResponse('Runtime.enable')
-      .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1337'}}})
+      .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1337'}}})
       .mockResponse('Page.createIsolatedWorld', {executionContextId: 9001})
       .mockResponse('Runtime.evaluate', Promise.reject(new Error('Cannot find context')))
       .mockResponse('Page.enable')
       .mockResponse('Runtime.enable')
-      .mockResponse('Page.getResourceTree', {frameTree: {frame: {id: '1337'}}})
+      .mockResponse('Page.getFrameTree', {frameTree: {frame: {id: '1337'}}})
       .mockResponse('Page.createIsolatedWorld', {executionContextId: 9002})
       .mockResponse('Runtime.evaluate', {result: {value: 'mocked value'}});
 

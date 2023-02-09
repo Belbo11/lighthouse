@@ -15,7 +15,6 @@ import {BaseNode} from '../../lib/dependency-graph/base-node.js';
 import {ByteEfficiencyAudit} from './byte-efficiency-audit.js';
 import {UnusedCSS} from '../../computed/unused-css.js';
 import {NetworkRequest} from '../../lib/network-request.js';
-import {ProcessedTrace} from '../../computed/processed-trace.js';
 import {ProcessedNavigation} from '../../computed/processed-navigation.js';
 import {LoadSimulator} from '../../computed/load-simulator.js';
 import {FirstContentfulPaint} from '../../computed/metrics/first-contentful-paint.js';
@@ -133,8 +132,7 @@ class RenderBlockingResources extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const simulatorData = {devtoolsLog, settings: context.settings};
-    const processedTrace = await ProcessedTrace.request(trace, context);
-    const processedNavigation = await ProcessedNavigation.request(processedTrace, context);
+    const processedNavigation = await ProcessedNavigation.request(trace, context);
     const simulator = await LoadSimulator.request(simulatorData, context);
     const wastedCssBytes = await RenderBlockingResources.computeWastedCSSBytes(artifacts, context);
 
@@ -292,7 +290,8 @@ class RenderBlockingResources extends Audit {
       {key: 'wastedMs', valueType: 'timespanMs', label: str_(i18n.UIStrings.columnWastedMs)},
     ];
 
-    const details = Audit.makeOpportunityDetails(headings, results, wastedMs);
+    const details = Audit.makeOpportunityDetails(headings, results,
+      {overallSavingsMs: wastedMs});
 
     return {
       displayValue,

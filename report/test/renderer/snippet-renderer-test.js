@@ -8,10 +8,10 @@ import assert from 'assert/strict';
 
 import jsdom from 'jsdom';
 
-import {Util} from '../../renderer/util.js';
-import {I18n} from '../../renderer/i18n.js';
+import {I18nFormatter} from '../../renderer/i18n-formatter.js';
 import {DOM} from '../../renderer/dom.js';
 import {SnippetRenderer} from '../../renderer/snippet-renderer.js';
+import {Globals} from '../../renderer/report-globals.js';
 
 /* Generates a snippet lines array like this (for a single range from 1 to 4):
   [
@@ -55,13 +55,17 @@ describe('DetailsRenderer', () => {
   let dom;
 
   before(() => {
-    Util.i18n = new I18n('en', {...Util.UIStrings});
+    Globals.apply({
+      providedStrings: {},
+      i18n: new I18nFormatter('en'),
+      reportJson: null,
+    });
     const {document} = new jsdom.JSDOM().window;
     dom = new DOM(document);
   });
 
   after(() => {
-    Util.i18n = undefined;
+    Globals.i18n = undefined;
   });
 
   function renderSnippet(details) {

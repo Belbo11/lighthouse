@@ -235,7 +235,7 @@ class RobotsTxt extends Audit {
       {key: 'message', valueType: 'code', label: 'Error'},
     ];
 
-    const details = Audit.makeTableDetails(headings, validationErrors, {});
+    const details = Audit.makeTableDetails(headings, validationErrors);
     let displayValue;
 
     if (validationErrors.length) {

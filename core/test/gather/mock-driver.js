@@ -254,6 +254,7 @@ async function mockDriverSubmodules() {
     prepareTargetForTimespanMode: fnAny(),
     prepareTargetForNavigationMode: fnAny(),
     prepareTargetForIndividualNavigation: fnAny(),
+    enableAsyncStacks: fnAny().mockReturnValue(fnAny()),
   };
   const storageMock = {clearDataForOrigin: fnAny()};
   const emulationMock = {

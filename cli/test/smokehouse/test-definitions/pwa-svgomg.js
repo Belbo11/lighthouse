@@ -8,7 +8,7 @@ import pwaDetailsExpectations from './pwa-expectations-details.js';
 
 const jakeExpectations = {...pwaDetailsExpectations, hasShortName: false};
 
-/** @type {LH.Config.Json} */
+/** @type {LH.Config} */
 const config = {
   extends: 'lighthouse:default',
   settings: {
