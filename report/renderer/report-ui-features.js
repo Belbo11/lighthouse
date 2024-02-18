@@ -1,18 +1,7 @@
 /**
  * @license
- * Copyright 2017 The Lighthouse Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -114,12 +103,15 @@ export class ReportUIFeatures {
     }
 
     if (this._opts.onViewTrace) {
-      this.addButton({
-        text: lhr.configSettings.throttlingMethod === 'simulate' ?
-          Globals.strings.viewOriginalTraceLabel :
-          Globals.strings.viewTraceLabel,
-        onClick: () => this._opts.onViewTrace?.(),
-      });
+      if (lhr.configSettings.throttlingMethod === 'simulate') {
+        // eslint-disable-next-line max-len
+        this._dom.find('a[data-action="view-unthrottled-trace"]', this._dom.rootEl).classList.remove('lh-hidden');
+      } else {
+        this.addButton({
+          text: Globals.strings.viewTraceLabel,
+          onClick: () => this._opts.onViewTrace?.(),
+        });
+      }
     }
 
     if (this._opts.getStandaloneReportHTML) {
@@ -244,9 +236,11 @@ export class ReportUIFeatures {
 
     tablesWithUrls.forEach((tableEl) => {
       const rowEls = getTableRows(tableEl);
-      const primaryRowEls = rowEls.filter(rowEl => !rowEl.classList.contains('lh-sub-item-row'));
-      const thirdPartyRowEls = this._getThirdPartyRows(
-        primaryRowEls, Util.getFinalDisplayedUrl(this.json));
+      const nonSubItemRows = rowEls.filter(rowEl => !rowEl.classList.contains('lh-sub-item-row'));
+      const thirdPartyRowEls = this._getThirdPartyRows(nonSubItemRows,
+        Util.getFinalDisplayedUrl(this.json));
+      // Entity-grouped tables don't have zebra lines.
+      const hasZebraStyle = rowEls.some(rowEl => rowEl.classList.contains('lh-row--even'));
 
       // create input box
       const filterTemplate = this._dom.createComponent('3pFilter');
@@ -255,16 +249,19 @@ export class ReportUIFeatures {
       filterInput.addEventListener('change', e => {
         const shouldHideThirdParty = e.target instanceof HTMLInputElement && !e.target.checked;
         let even = true;
-        let rowEl = primaryRowEls[0];
+        let rowEl = nonSubItemRows[0];
         while (rowEl) {
           const shouldHide = shouldHideThirdParty && thirdPartyRowEls.includes(rowEl);
 
           // Iterate subsequent associated sub item rows.
           do {
             rowEl.classList.toggle('lh-row--hidden', shouldHide);
-            // Adjust for zebra styling.
-            rowEl.classList.toggle('lh-row--even', !shouldHide && even);
-            rowEl.classList.toggle('lh-row--odd', !shouldHide && !even);
+
+            if (hasZebraStyle) {
+              // Adjust for zebra styling.
+              rowEl.classList.toggle('lh-row--even', !shouldHide && even);
+              rowEl.classList.toggle('lh-row--odd', !shouldHide && !even);
+            }
 
             rowEl = /** @type {HTMLElement} */ (rowEl.nextElementSibling);
           } while (rowEl && rowEl.classList.contains('lh-sub-item-row'));
@@ -273,12 +270,16 @@ export class ReportUIFeatures {
         }
       });
 
+      // thirdPartyRowEls contains both heading and item rows.
+      // Filter out heading rows to get third party resource count.
+      const thirdPartyResourceCount = thirdPartyRowEls.filter(
+        rowEl => !rowEl.classList.contains('lh-row--group')).length;
       this._dom.find('.lh-3p-filter-count', filterTemplate).textContent =
-          `${thirdPartyRowEls.length}`;
+        `${thirdPartyResourceCount}`;
       this._dom.find('.lh-3p-ui-string', filterTemplate).textContent =
           Globals.strings.thirdPartyResourcesLabel;
 
-      const allThirdParty = thirdPartyRowEls.length === primaryRowEls.length;
+      const allThirdParty = thirdPartyRowEls.length === nonSubItemRows.length;
       const allFirstParty = !thirdPartyRowEls.length;
 
       // If all or none of the rows are 3rd party, hide the control.
@@ -321,7 +322,7 @@ export class ReportUIFeatures {
    * @return {Array<HTMLElement>}
    */
   _getThirdPartyRows(rowEls, finalDisplayedUrl) {
-    const finalDisplayedUrlRootDomain = Util.getRootDomain(finalDisplayedUrl);
+    const finalDisplayedUrlEntity = Util.getEntityFromUrl(finalDisplayedUrl, this.json.entities);
     const firstPartyEntityName = this.json.entities?.find(e => e.isFirstParty === true)?.name;
 
     /** @type {Array<HTMLElement>} */
@@ -336,7 +337,8 @@ export class ReportUIFeatures {
         if (!urlItem) continue;
         const datasetUrl = urlItem.dataset.url;
         if (!datasetUrl) continue;
-        const isThirdParty = Util.getRootDomain(datasetUrl) !== finalDisplayedUrlRootDomain;
+        const isThirdParty =
+          Util.getEntityFromUrl(datasetUrl, this.json.entities) !== finalDisplayedUrlEntity;
         if (!isThirdParty) continue;
       }
 

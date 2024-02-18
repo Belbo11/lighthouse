@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2023 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {Util} from '../../shared/util.js';
@@ -27,7 +27,13 @@ class ReportUtils {
 
     for (const audit of Object.values(clone.audits)) {
       // Attach table/opportunity items with entity information.
-      ReportUtils.classifyEntities(clone.entities, audit);
+      if (audit.details) {
+        if (audit.details.type === 'opportunity' || audit.details.type === 'table') {
+          if (!audit.details.isEntityGrouped && clone.entities) {
+            ReportUtils.classifyEntities(clone.entities, audit.details);
+          }
+        }
+      }
     }
 
     // For convenience, smoosh all AuditResults into their auditRef (which has just weight & group)
@@ -79,7 +85,7 @@ class ReportUtils {
    * Given an audit's details, identify and return a URL locator function that
    * can be called later with an `item` to extract the URL of it.
    * @param {LH.FormattedIcu<LH.Audit.Details.TableColumnHeading[]>} headings
-   * @return {{(item: LH.FormattedIcu<LH.Audit.Details.TableItem>): string|undefined}=}
+   * @return {((item: LH.FormattedIcu<LH.Audit.Details.TableItem>) => string|undefined)=}
    */
   static getUrlLocatorFn(headings) {
     // The most common type, valueType=url.
@@ -109,17 +115,12 @@ class ReportUtils {
 
   /**
    * Mark TableItems/OpportunityItems with entity names.
-   * @param {LH.Result.Entities|undefined} entities
-   * @param {import('../../types/lhr/audit-result').Result} audit
+   * @param {LH.Result.Entities} entities
+   * @param {LH.FormattedIcu<LH.Audit.Details.Opportunity|LH.Audit.Details.Table>} details
    */
-  static classifyEntities(entities, audit) {
-    if (!entities) return;
-    if (audit.details?.type !== 'opportunity' && audit.details?.type !== 'table') {
-      return;
-    }
-
+  static classifyEntities(entities, details) {
     // If details.items are already marked with entity attribute during an audit, nothing to do here.
-    const {items, headings} = audit.details;
+    const {items, headings} = details;
     if (!items.length || items.some(item => item.entity)) return;
 
     // Identify a URL-locator function that we could call against each item to get its URL.
@@ -140,6 +141,30 @@ class ReportUtils {
       const entity = entities.find(e => e.origins.includes(origin));
       if (entity) item.entity = entity.name;
     }
+  }
+
+  /**
+   * Returns a comparator created from the supplied list of keys
+   * @param {Array<string>} sortedBy
+   * @return {((a: LH.Audit.Details.TableItem, b: LH.Audit.Details.TableItem) => number)}
+   */
+  static getTableItemSortComparator(sortedBy) {
+    return (a, b) => {
+      for (const key of sortedBy) {
+        const aVal = a[key];
+        const bVal = b[key];
+        if (typeof aVal !== typeof bVal || !['number', 'string'].includes(typeof aVal)) {
+          console.warn(`Warning: Attempting to sort unsupported value type: ${key}.`);
+        }
+        if (typeof aVal === 'number' && typeof bVal === 'number' && aVal !== bVal) {
+          return bVal - aVal;
+        }
+        if (typeof aVal === 'string' && typeof bVal === 'string' && aVal !== bVal) {
+          return aVal.localeCompare(bVal);
+        }
+      }
+      return 0;
+    };
   }
 
   /**
@@ -373,8 +398,6 @@ const UIStrings = {
   viewTreemapLabel: 'View Treemap',
   /** This label is for a button that will show the user a trace of the page. */
   viewTraceLabel: 'View Trace',
-  /** This label is for a button that will show the user a trace of the page. */
-  viewOriginalTraceLabel: 'View Original Trace',
 
   /** Option in a dropdown menu that opens a small, summary report in a print dialog.  */
   dropdownPrintSummary: 'Print Summary',
@@ -392,6 +415,8 @@ const UIStrings = {
   dropdownSaveGist: 'Save as Gist',
   /** Option in a dropdown menu that toggles the themeing of the report between Light(default) and Dark themes. */
   dropdownDarkTheme: 'Toggle Dark Theme',
+  /** Option in a dropdown menu that opens the trace of the page without throttling. "Unthrottled" can be replaced with "Original". */
+  dropdownViewUnthrottledTrace: 'View Unthrottled Trace',
 
   /** Label for a row in a table that describes the kind of device that was emulated for the Lighthouse run.  Example values for row elements: 'No Emulation', 'Emulated Desktop', etc. */
   runtimeSettingsDevice: 'Device',
@@ -419,12 +444,16 @@ const UIStrings = {
   runtimeDesktopEmulation: 'Emulated Desktop',
   /** Descriptive explanation for a runtime setting that is set to an unknown value. */
   runtimeUnknown: 'Unknown',
-  /** Descriptive label that this analysis run was from a single pageload of a browser (not a summary of hundreds of loads) */
-  runtimeSingleLoad: 'Single page load',
+  /** Descriptive label that this analysis run was from a single sample of a page session (not a summary of hundreds of loads) */
+  runtimeSingleLoad: 'Single page session',
   /** Descriptive label that this analysis only considers the initial load of the page, and no interaction beyond when the page had "fully loaded" */
   runtimeAnalysisWindow: 'Initial page load',
-  /** Descriptive explanation that this analysis run was from a single pageload of a browser, whereas field data often summarizes hundreds+ of page loads */
-  runtimeSingleLoadTooltip: 'This data is taken from a single page load, as opposed to field data summarizing many sessions.', // eslint-disable-line max-len
+  /** Descriptive label that this analysis considers some arbitrary period of time containing user interactions */
+  runtimeAnalysisWindowTimespan: 'User interactions timespan',
+  /** Descriptive label that this analysis considers a snapshot of the page at a single point in time */
+  runtimeAnalysisWindowSnapshot: 'Point-in-time snapshot',
+  /** Descriptive explanation that this analysis run was from a single sample of a page session, whereas field data often summarizes hundreds+ of page loads */
+  runtimeSingleLoadTooltip: 'This data is taken from a single page session, as opposed to field data summarizing many sessions.', // eslint-disable-line max-len
 
   /** Descriptive explanation for environment throttling that was provided by the runtime environment instead of provided by Lighthouse throttling. */
   throttlingProvided: 'Provided by environment',
@@ -440,6 +469,16 @@ const UIStrings = {
   runtimeSlow4g: 'Slow 4G throttling',
   /** Label indicating that Lighthouse throttled the page using custom throttling settings. */
   runtimeCustom: 'Custom throttling',
+
+  /** This label is for a decorative chip that is included in a table row. The label indicates that the entity/company name in the row belongs to the first-party (or "1st-party"). First-party label is used to identify resources that are directly controlled by the owner of the web page. */
+  firstPartyChipLabel: '1st party',
+  /** Descriptive explanation in a tooltip form for a link to be opened in a new tab of the browser. */
+  openInANewTabTooltip: 'Open in a new tab',
+  /** Generic category name for all resources that could not be attributed to a 1st or 3rd party entity. */
+  unattributable: 'Unattributable',
+
+  /** Message communicating the removal of the PWA category. */
+  pwaRemovalMessage: 'As per [Chrome’s updated Installability Criteria](https://developer.chrome.com/blog/update-install-criteria), Lighthouse will be deprecating the PWA category in a future release. Please refer to the [updated PWA documentation](https://developer.chrome.com/docs/devtools/progressive-web-apps/) for future PWA testing.',
 };
 
 export {

@@ -47,16 +47,15 @@ describe('The Lighthouse start view', async () => {
     assert.strictEqual(helpText, '');
   });
 
-  it('disables the start button for internal pages', async () => {
+  // Flaky test.
+  it.skipOnPlatforms(['mac'], '[crbug.com/1484942]: disables the start button for internal pages', async () => {
     await navigateToLighthouseTab();
     await goTo('about:blank');
 
     const disabled = await isGenerateReportButtonDisabled();
     const helpText = await getHelpText();
     assert.isTrue(disabled, 'The Generate Report button should be disabled');
-    assert.strictEqual(
-        helpText,
-        'Can only audit HTTP/HTTPS pages and Chrome extensions. Navigate to a different page to start an audit.');
+    assert.strictEqual(helpText, 'Can only audit pages on HTTP or HTTPS. Navigate to a different page.');
   });
 
   // Broken on non-debug runs

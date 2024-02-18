@@ -5,7 +5,13 @@
 import {assert} from 'chai';
 import * as path from 'path';
 
-import {getBrowserAndPages, waitFor, waitForAria, waitForElementWithTextContent} from '../../shared/helper.js';
+import {expectError} from '../../conductor/events.js';
+import {
+  getBrowserAndPages,
+  waitFor,
+  waitForAria,
+  waitForElementWithTextContent,
+} from '../../shared/helper.js';
 import {describe, it} from '../../shared/mocha-extensions.js';
 import {openDeviceToolbar, reloadDockableFrontEnd, selectDevice} from '../helpers/emulation-helpers.js';
 import {
@@ -29,7 +35,21 @@ const IPAD_MINI_LANDSCAPE_VIEWPORT_DIMENSIONS = {
 
 describe('DevTools', function() {
   // The tests in this suite are particularly slow
-  this.timeout(60_000);
+  if (this.timeout() !== 0) {
+    this.timeout(60_000);
+  }
+
+  beforeEach(async () => {
+    // https://github.com/GoogleChrome/lighthouse/issues/14572
+    expectError(/Request CacheStorage\.requestCacheNames failed/);
+
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=1357791
+    expectError(/Protocol Error: the message with wrong session id/);
+    expectError(/Protocol Error: the message with wrong session id/);
+    expectError(/Protocol Error: the message with wrong session id/);
+    expectError(/Protocol Error: the message with wrong session id/);
+    expectError(/Protocol Error: the message with wrong session id/);
+  });
 
   describe('request blocking', () => {
     // Start blocking *.css
@@ -37,23 +57,23 @@ describe('DevTools', function() {
     // the designated tests in network-request-blocking-panel_test.ts are skipped by default due to flakiness.
     beforeEach(async () => {
       const {frontend} = getBrowserAndPages();
-      await frontend.evaluate(() => {
-        // @ts-ignore layout test global
-        const networkManager = self.SDK.multitargetNetworkManager;
+      await frontend.evaluate(`(async () => {
+        const SDK = await import('./core/sdk/sdk.js');
+        const networkManager = SDK.NetworkManager.MultitargetNetworkManager.instance();
         networkManager.setBlockingEnabled(true);
         networkManager.setBlockedPatterns([{enabled: true, url: '*.css'}]);
-      });
+      })()`);
     });
 
     // Reset request blocking state
     afterEach(async () => {
       const {frontend} = getBrowserAndPages();
-      await frontend.evaluate(() => {
-        // @ts-ignore layout test global
-        const networkManager = globalThis.SDK.multitargetNetworkManager;
+      await frontend.evaluate(`(async () => {
+        const SDK = await import('./core/sdk/sdk.js');
+        const networkManager = SDK.NetworkManager.MultitargetNetworkManager.instance();
         networkManager.setBlockingEnabled(false);
         networkManager.setBlockedPatterns([]);
-      });
+      })()`);
     });
 
     it('is respected during a lighthouse run', async () => {

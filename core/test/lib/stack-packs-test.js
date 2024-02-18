@@ -1,13 +1,13 @@
 /**
- * @license Copyright 2020 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2020 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import lighthouseStackPacksDep from 'lighthouse-stack-packs';
 
 import {initializeConfig} from '../../config/config.js';
-import {stackPacksToInclude} from '../../lib/stack-packs.js';
+import {stackPacksToInclude, getStackPacks} from '../../lib/stack-packs.js';
 
 async function getAuditIds() {
   const {resolvedConfig} = await initializeConfig('navigation');
@@ -21,6 +21,27 @@ describe('stack-packs lib', () => {
       .map(p => p.id);
     expect(result).toEqual([]);
   });
+
+  it('returns packs from page stacks', () => {
+    expect(getStackPacks([])).toEqual([]);
+    expect(getStackPacks([{detector: 'js', id: 'i-dont-know-you'}])).toEqual([]);
+
+    const packs = getStackPacks([
+      {detector: 'js', id: 'wordpress'},
+      {detector: 'js', id: 'react'},
+    ]);
+
+    expect(packs.map(pack => pack.id)).toEqual(['wordpress', 'react']);
+  });
+
+  it('returns packs from page stacks in order defined by us', () => {
+    const packs = getStackPacks([
+      {detector: 'js', id: 'react'},
+      {detector: 'js', id: 'wordpress'},
+    ]);
+
+    expect(packs.map(pack => pack.id)).toEqual(['wordpress', 'react']);
+  });
 });
 
 // These tests summarize the contents of the lighthouse-stack-packs package.
@@ -32,12 +53,15 @@ Array [
   "angular",
   "drupal",
   "ezoic",
+  "gatsby",
   "joomla",
   "magento",
   "next.js",
+  "nitropack",
   "nuxt",
   "octobercms",
   "react",
+  "wix",
   "wordpress",
   "wp-rocket",
 ]
@@ -112,6 +136,20 @@ Array [
     ],
   },
   Object {
+    "id": "gatsby",
+    "keys": Array [
+      "unused-css-rules",
+      "modern-image-formats",
+      "offscreen-images",
+      "render-blocking-resources",
+      "unused-javascript",
+      "uses-long-cache-ttl",
+      "uses-optimized-images",
+      "uses-responsive-images",
+      "prioritize-lcp-image",
+    ],
+  },
+  Object {
     "id": "joomla",
     "keys": Array [
       "unused-css-rules",
@@ -165,6 +203,25 @@ Array [
     ],
   },
   Object {
+    "id": "nitropack",
+    "keys": Array [
+      "unused-css-rules",
+      "modern-image-formats",
+      "offscreen-images",
+      "render-blocking-resources",
+      "unminified-css",
+      "unminified-javascript",
+      "unused-javascript",
+      "uses-long-cache-ttl",
+      "uses-optimized-images",
+      "uses-text-compression",
+      "uses-responsive-images",
+      "server-response-time",
+      "dom-size",
+      "font-display",
+    ],
+  },
+  Object {
     "id": "nuxt",
     "keys": Array [
       "modern-image-formats",
@@ -204,6 +261,16 @@ Array [
       "redirects",
       "user-timings",
       "dom-size",
+    ],
+  },
+  Object {
+    "id": "wix",
+    "keys": Array [
+      "modern-image-formats",
+      "render-blocking-resources",
+      "efficient-animated-content",
+      "unused-javascript",
+      "server-response-time",
     ],
   },
   Object {

@@ -14,6 +14,7 @@ gcloud --project="$CLOUDSDK_CORE_PROJECT" compute instances create lantern-colle
   --machine-type=n1-standard-2
 
 echo "export WPT_KEY=\"$WPT_KEY\"" > .tmp_wpt_key
+echo "export WPT_URL=\"$WPT_URL\"" >> .tmp_wpt_key
 # Instance needs time to start up.
 until gcloud --project="$CLOUDSDK_CORE_PROJECT" compute scp ./.tmp_wpt_key lantern-collect-instance:/tmp/wpt-key --zone="$ZONE"
 do

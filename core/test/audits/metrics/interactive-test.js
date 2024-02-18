@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2017 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import assert from 'assert/strict';
@@ -12,8 +12,8 @@ import {readJson} from '../../test-utils.js';
 
 const acceptableTrace = readJson('../../fixtures/traces/progressive-app-m60.json', import.meta);
 const acceptableDevToolsLog = readJson('../../fixtures/traces/progressive-app-m60.devtools.log.json', import.meta);
-const redirectTrace = readJson('../../fixtures/traces/site-with-redirect.json', import.meta);
-const redirectDevToolsLog = readJson('../../fixtures/traces/site-with-redirect.devtools.log.json', import.meta);
+const redirectTrace = readJson('../../fixtures/artifacts/redirect/trace.json', import.meta);
+const redirectDevToolsLog = readJson('../../fixtures/artifacts/redirect/devtoolslog.json', import.meta);
 
 const options = Interactive.defaultOptions;
 
@@ -65,9 +65,8 @@ describe('Performance: interactive audit', () => {
 
     const context = getFakeContext({formFactor: 'mobile', throttlingMethod: 'provided'});
     return Interactive.audit(artifacts, context).then(output => {
-      assert.equal(output.score, 0.97);
-      assert.equal(Math.round(output.numericValue), 2712);
-      expect(output.displayValue).toBeDisplayString('2.7\xa0s');
+      assert.equal(output.score, 0.98);
+      expect(output.numericValue).toMatchInlineSnapshot(`2381.989`);
     });
   });
 });

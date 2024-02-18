@@ -1,8 +1,8 @@
 <!doctype html>
 <!--
- * Copyright 2018 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2018 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
 -->
 
 <html>
@@ -16,6 +16,13 @@
   }
   body {
     margin: 0;
+
+    /* Without an explicit body font size, elements are more likely to have fractional sizes, which
+       complicates the tap target + finger overlap calculations. They can end up just 5% different
+       in different DPIs.
+       (Essentially caused by the accumulation of rounding to integer css pixels for DPI=1)
+       */
+    font-size: 14px;
   }
   </style>
   <script>
@@ -39,7 +46,7 @@
         It should not fail though because overlap with a sticky element depends on the scroll position.
       </a>
     </div>
-      
+
     <h1>SEO Tap targets</h1>
 
     <!-- Invisible nodes don't cause failures -->
@@ -61,7 +68,7 @@
     </div>
     <br/><br/>
 
-    
+
     <div style="overflow: hidden; position: relative">
       <!-- Should be counted as visible although part of it is outside the scroll container -->
       <a data-gathered-target="target-with-client-rect-outside-scroll-container">
@@ -95,7 +102,7 @@
 
     <br/><br/>
 
-    <!-- The left tap target has a large client rect that would normally overlap with the right tap target, 
+    <!-- The left tap target has a large client rect that would normally overlap with the right tap target,
          but the left link is overflow hidden, so there should be no failure. We should however
          detect both tap targets (and not say the left one is invisible because the center of the big client rect is invisible) -->
     <div style="overflow: hidden">
@@ -103,7 +110,7 @@
         data-gathered-target="child-client-rect-hidden-by-overflow-hidden"
         style="display: block; height: 40px; width: 40px; background: #fca; float: left; overflow: hidden; position: relative;">
         <div style="background: #afa; height: 40px; width: 80px; position: absolute; left: 30px">
-          left    
+          left
         </div>
       </a>
       <a
@@ -119,7 +126,7 @@
         data-gathered-target="child-client-rect-overlapping-other-target"
         style="display: block; height: 40px; width: 40px; background: #fca; float: left; position: relative;">
         <div style="background: #afa; height: 40px; width: 30px; position: absolute; left: 30px">
-          left    
+          left
         </div>
       </a>
       <a

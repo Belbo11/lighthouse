@@ -2004,7 +2004,7 @@
         "valid-source-maps": {
             "id": "valid-source-maps",
             "title": "Page has valid source maps",
-            "description": "Source maps translate minified code to the original source code. This helps developers debug in production. In addition, Lighthouse is able to provide further insights. Consider deploying source maps to take advantage of these benefits. [Learn more](https://developers.google.com/web/tools/chrome-devtools/javascript/source-maps).",
+            "description": "Source maps translate minified code to the original source code. This helps developers debug in production. In addition, Lighthouse is able to provide further insights. Consider deploying source maps to take advantage of these benefits. [Learn more](https://developer.chrome.com/docs/devtools/javascript/source-maps/).",
             "score": 1,
             "scoreDisplayMode": "binary",
             "details": {
@@ -4557,6 +4557,7 @@
         "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 7.0; Moto G (4)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4590.2 Mobile Safari/537.36 Chrome-Lighthouse",
         "auditMode": false,
         "gatherMode": false,
+        "clearStorageTypes": ["file_systems", "shader_cache", "service_workers", "cache_storage"],
         "disableStorageReset": false,
         "debugNavigation": false,
         "channel": "devtools",

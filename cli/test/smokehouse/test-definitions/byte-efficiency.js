@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2017 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -187,25 +187,25 @@ const expectations = {
           items: [
             {
               url: 'http://localhost:10200/byte-efficiency/script.js',
-              wastedBytes: '46555 +/- 100',
+              wastedBytes: '45816 +/- 100',
               wastedPercent: '87 +/- 5',
             },
             {
               // /some-custom-url.js,
-              url: 'inline: \n  function unusedFunction() {\n    // Un...',
-              wastedBytes: '6690 +/- 100',
+              url: 'inline: \n  function unusedFunction() {\n    // U…',
+              wastedBytes: '6630 +/- 100',
               wastedPercent: '99.6 +/- 0.1',
             },
             {
-              url: 'inline: \n  // Used block #1\n  // FILLER DATA JUS...',
-              wastedBytes: '6569 +/- 100',
+              url: 'inline: \n  // Used block #1\n  // FILLER DATA JU…',
+              wastedBytes: '6510 +/- 100',
               wastedPercent: 100,
             },
             {
               url: 'http://localhost:10200/byte-efficiency/bundle.js',
               totalBytes: '12962 +/- 1000',
-              wastedBytes: '2349 +/- 100',
-              wastedPercent: '19 +/- 5',
+              wastedBytes: '2303 +/- 100',
+              wastedPercent: '18 +/- 5',
             },
           ],
         },
@@ -243,7 +243,7 @@ const expectations = {
               wastedBytes: '5827 +/- 200',
               subItems: {
                 items: [
-                  {source: '…./b.js', sourceBytes: '4417 +/- 50', sourceWastedBytes: '2191 +/- 50'},
+                  {source: '…./b.js', sourceBytes: '4347 +/- 50', sourceWastedBytes: '2156 +/- 50'},
                   {source: '…./c.js', sourceBytes: '2200 +/- 50', sourceWastedBytes: '2182 +/- 50'},
                   {source: '…webpack/bootstrap', sourceBytes: '2809 +/- 50', sourceWastedBytes: '1259 +/- 50'},
                 ],

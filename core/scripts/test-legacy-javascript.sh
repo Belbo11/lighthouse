@@ -33,3 +33,6 @@ node run.js
 if [[ -n "$CI" ]]; then
   git add summary-sizes.txt && git diff --cached --exit-code
 fi
+
+cd -
+node core/scripts/legacy-javascript/create-polyfill-size-estimation.js

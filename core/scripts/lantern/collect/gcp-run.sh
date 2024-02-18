@@ -18,6 +18,7 @@ cd ./lighthouse
 git fetch origin
 git checkout -f origin/main
 yarn install
+yarn build-report
 
 # Import WPT_KEY vars
 source /home/lighthouse/.env

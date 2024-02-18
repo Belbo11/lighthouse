@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2020 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2020 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {CumulativeLayoutShift} from '../../../computed/metrics/cumulative-layout-shift.js';
@@ -26,7 +26,14 @@ describe('Metrics: CLS', () => {
       expect(result).toEqual({
         cumulativeLayoutShift: expect.toBeApproximately(2.268816, 6),
         cumulativeLayoutShiftMainFrame: expect.toBeApproximately(2.268816, 6),
-        totalCumulativeLayoutShift: expect.toBeApproximately(4.809794, 6),
+        impactByNodeId: new Map([
+          [8, 4.809793674045139],
+        ]),
+        newEngineResult: {
+          cumulativeLayoutShift: expect.toBeApproximately(2.268816, 6),
+          cumulativeLayoutShiftMainFrame: expect.toBeApproximately(2.268816, 6),
+        },
+        newEngineResultDiffered: false,
       });
     });
 
@@ -40,7 +47,15 @@ describe('Metrics: CLS', () => {
       expect(result).toEqual({
         cumulativeLayoutShift: 0.026463014612806653,
         cumulativeLayoutShiftMainFrame: 0.0011656245471340055,
-        totalCumulativeLayoutShift: 0.0011656245471340055,
+        impactByNodeId: new Map([
+          [7, 0.026463014612806653],
+          [8, 0.0011656245471340055],
+        ]),
+        newEngineResult: {
+          cumulativeLayoutShift: 0.026463014612806653,
+          cumulativeLayoutShiftMainFrame: 0.0011656245471340055,
+        },
+        newEngineResultDiffered: false,
       });
     });
 
@@ -49,7 +64,9 @@ describe('Metrics: CLS', () => {
       expect(result).toEqual({
         cumulativeLayoutShift: 0,
         cumulativeLayoutShiftMainFrame: 0,
-        totalCumulativeLayoutShift: 0,
+        impactByNodeId: new Map(),
+        newEngineResult: {cumulativeLayoutShift: 0, cumulativeLayoutShiftMainFrame: 0},
+        newEngineResultDiffered: false,
       });
     });
   });
@@ -123,11 +140,13 @@ describe('Metrics: CLS', () => {
         expect(result).toEqual({
           cumulativeLayoutShift: 4,
           cumulativeLayoutShiftMainFrame: 4,
-          totalCumulativeLayoutShift: 4,
+          impactByNodeId: new Map(),
+          newEngineResult: undefined,
+          newEngineResultDiffered: false,
         });
       });
 
-      it('should not count later shift events if input it true', async () => {
+      it('should not count later shift events if input is true', async () => {
         const context = {computedCache: new Map()};
         const trace = makeTrace([
           {score: 1, ts: 1, had_recent_input: true},
@@ -140,7 +159,9 @@ describe('Metrics: CLS', () => {
         expect(result).toEqual({
           cumulativeLayoutShift: 3,
           cumulativeLayoutShiftMainFrame: 3,
-          totalCumulativeLayoutShift: 3,
+          impactByNodeId: new Map(),
+          newEngineResult: undefined,
+          newEngineResultDiffered: false,
         });
       });
 
@@ -158,7 +179,9 @@ describe('Metrics: CLS', () => {
         expect(result).toEqual({
           cumulativeLayoutShift: 0.75,
           cumulativeLayoutShiftMainFrame: 0.75,
-          totalCumulativeLayoutShift: 3.75, // 30 * 0.125
+          impactByNodeId: new Map(),
+          newEngineResult: {cumulativeLayoutShift: 0.75, cumulativeLayoutShiftMainFrame: 0.75},
+          newEngineResultDiffered: false,
         });
       });
 
@@ -183,7 +206,9 @@ describe('Metrics: CLS', () => {
         expect(result).toEqual({
           cumulativeLayoutShift: 1.0625,
           cumulativeLayoutShiftMainFrame: 1.0625,
-          totalCumulativeLayoutShift: 1.375,
+          impactByNodeId: new Map(),
+          newEngineResult: {cumulativeLayoutShift: 1.0625, cumulativeLayoutShiftMainFrame: 1.0625},
+          newEngineResultDiffered: false,
         });
       });
 
@@ -201,16 +226,18 @@ describe('Metrics: CLS', () => {
         expect(result).toEqual({
           cumulativeLayoutShift: 3.75, // 30 * 0.125
           cumulativeLayoutShiftMainFrame: 3.75,
-          totalCumulativeLayoutShift: 3.75,
+          impactByNodeId: new Map(),
+          newEngineResult: {cumulativeLayoutShift: 3.75, cumulativeLayoutShiftMainFrame: 3.75},
+          newEngineResultDiffered: false,
         });
       });
 
       it('includes events with recent input at start of trace, but ignores others', async () => {
         const shiftEvents = [
           {score: 1, ts: 250_000, had_recent_input: true},
-          {score: 1, ts: 500_000, had_recent_input: true},
+          {score: 1, ts: 500_000, had_recent_input: true}, // These first two events will still be counted because they are within the 500ms window.
           {score: 1, ts: 750_000, had_recent_input: true},
-          {score: 1, ts: 1_000_000, had_recent_input: true}, // These first four events will still be counted.
+          {score: 1, ts: 1_000_000, had_recent_input: true}, // These second two events will not be counted because they are outside the 500ms window.
 
           {score: 1, ts: 1_250_000, had_recent_input: false},
 
@@ -223,9 +250,11 @@ describe('Metrics: CLS', () => {
 
         const result = await CumulativeLayoutShift.request(trace, context);
         expect(result).toEqual({
-          cumulativeLayoutShift: 5,
-          cumulativeLayoutShiftMainFrame: 5,
-          totalCumulativeLayoutShift: 5,
+          cumulativeLayoutShift: 3,
+          cumulativeLayoutShiftMainFrame: 3,
+          impactByNodeId: new Map(),
+          newEngineResult: undefined,
+          newEngineResultDiffered: false,
         });
       });
     });
@@ -246,14 +275,16 @@ describe('Metrics: CLS', () => {
         expect(result).toEqual({
           cumulativeLayoutShift: 0.75, // Same value as single-frame uniformly distributed.
           cumulativeLayoutShiftMainFrame: 0.125, // All 1s gaps, so only one event per cluster.
-          totalCumulativeLayoutShift: 1.875, // 0.125 * 15
+          impactByNodeId: new Map(),
+          newEngineResult: {cumulativeLayoutShift: 0.75, cumulativeLayoutShiftMainFrame: 0.125},
+          newEngineResultDiffered: false,
         });
       });
 
       it('includes events with recent input at start of trace, but ignores others', async () => {
         const shiftEvents = [
-          {score: 1, ts: 250_000, had_recent_input: true},
-          {score: 1, ts: 750_000, had_recent_input: true}, // These first two events will still be counted.
+          {score: 1, ts: 250_000, had_recent_input: true}, // This event will still be counted because it is within the 500ms window.
+          {score: 1, ts: 750_000, had_recent_input: true}, // This event will not be counted because it is outside the 500ms window.
 
           {score: 1, ts: 1_250_000, had_recent_input: false},
 
@@ -261,8 +292,8 @@ describe('Metrics: CLS', () => {
           {score: 1, ts: 2_000_000, had_recent_input: true},
 
           // Child frame
-          {score: 1, ts: 500_000, had_recent_input: true, is_main_frame: false},
-          {score: 1, ts: 1_000_000, had_recent_input: true, is_main_frame: false}, // These first two events will still be counted.
+          {score: 1, ts: 500_000, had_recent_input: true, is_main_frame: false}, // This event will still be counted because it is within the 500ms window.
+          {score: 1, ts: 1_000_000, had_recent_input: true, is_main_frame: false}, // This event will not be counted because it is outside the 500ms window.
 
           {score: 1, ts: 1_250_000, had_recent_input: false, is_main_frame: false},
 
@@ -273,9 +304,67 @@ describe('Metrics: CLS', () => {
 
         const result = await CumulativeLayoutShift.request(trace, context);
         expect(result).toMatchObject({
-          cumulativeLayoutShift: 6,
+          cumulativeLayoutShift: 4,
+          cumulativeLayoutShiftMainFrame: 2,
+          impactByNodeId: new Map(),
+          newEngineResult: undefined,
+          newEngineResultDiffered: false,
+        });
+      });
+
+      it('includes recent input events near first viewport event, but ignores others', async () => {
+        const shiftEvents = [
+          {score: 1, ts: 250_000, had_recent_input: true}, // This event will still be counted because it is within the 500ms window of the first viewport event.
+          // <<< Viewport event 1 is inserted here at ts 251_000 >>>
+          {score: 1, ts: 750_000, had_recent_input: true}, // This event will still be counted because it is within the 500ms window of the first viewport event.
+
+          {score: 1, ts: 1_250_000, had_recent_input: false},
+
+          {score: 1, ts: 1_750_000, had_recent_input: true}, // The last two will not be counted because only the first viewport event matters.
+          // <<< Viewport event 2 is inserted here at ts 1_751_000 >>>
+          {score: 1, ts: 2_000_000, had_recent_input: true},
+
+          // Child frame
+          {score: 1, ts: 500_000, had_recent_input: true, is_main_frame: false}, // This event will still be counted because it is within the 500ms window.
+          {score: 1, ts: 1_000_000, had_recent_input: true, is_main_frame: false}, // This event will not be counted because it is outside the 500ms window.
+
+          {score: 1, ts: 1_250_000, had_recent_input: false, is_main_frame: false},
+
+          {score: 1, ts: 1_500_000, had_recent_input: true, is_main_frame: false}, // The last two will not.
+          {score: 1, ts: 2_250_000, had_recent_input: true, is_main_frame: false},
+        ];
+        const trace = makeTrace(shiftEvents);
+
+        // Viewport event 1
+        trace.traceEvents.push({
+          name: 'viewport',
+          ts: 251_000,
+          cat: 'loading',
+          args: {
+            data: {
+              frameID: 'ROOT_FRAME',
+            },
+          },
+        });
+
+        // Viewport event 2
+        trace.traceEvents.push({
+          name: 'viewport',
+          ts: 1_751_000,
+          cat: 'loading',
+          args: {
+            data: {
+              frameID: 'ROOT_FRAME',
+            },
+          },
+        });
+
+        const result = await CumulativeLayoutShift.request(trace, context);
+        expect(result).toMatchObject({
+          cumulativeLayoutShift: 5,
           cumulativeLayoutShiftMainFrame: 3,
-          totalCumulativeLayoutShift: 3,
+          newEngineResult: undefined,
+          newEngineResultDiffered: false,
         });
       });
 
@@ -291,7 +380,7 @@ describe('Metrics: CLS', () => {
         expect(result).toMatchObject({
           cumulativeLayoutShift: 4,
           cumulativeLayoutShiftMainFrame: 2,
-          totalCumulativeLayoutShift: 2,
+          impactByNodeId: new Map(),
         });
       });
 
@@ -320,7 +409,7 @@ describe('Metrics: CLS', () => {
         expect(result).toMatchObject({
           cumulativeLayoutShift: 3,
           cumulativeLayoutShiftMainFrame: 1,
-          totalCumulativeLayoutShift: 1,
+          impactByNodeId: new Map(),
         });
       });
     });
@@ -340,7 +429,7 @@ describe('Metrics: CLS', () => {
         expect(result).toMatchObject({
           cumulativeLayoutShift: 6,
           cumulativeLayoutShiftMainFrame: 6,
-          totalCumulativeLayoutShift: 6,
+          impactByNodeId: new Map(),
         });
       });
 
@@ -359,7 +448,7 @@ describe('Metrics: CLS', () => {
         expect(result).toMatchObject({
           cumulativeLayoutShift: 6,
           cumulativeLayoutShiftMainFrame: 1,
-          totalCumulativeLayoutShift: 4,
+          impactByNodeId: new Map(),
         });
       });
 
@@ -373,7 +462,7 @@ describe('Metrics: CLS', () => {
         expect(result).toMatchObject({
           cumulativeLayoutShift: 2,
           cumulativeLayoutShiftMainFrame: 2,
-          totalCumulativeLayoutShift: 2,
+          impactByNodeId: new Map(),
         });
       });
 
@@ -387,9 +476,125 @@ describe('Metrics: CLS', () => {
         expect(result).toMatchObject({
           cumulativeLayoutShift: 2,
           cumulativeLayoutShiftMainFrame: 1,
-          totalCumulativeLayoutShift: 1,
+          impactByNodeId: new Map(),
         });
       });
+    });
+  });
+
+  describe('getImpactByNodeId', () => {
+    it('combines scores for the same nodeId across multiple shift events', () => {
+      const layoutShiftEvents = [
+        {
+          ts: 1_000_000,
+          isMainFrame: true,
+          weightedScore: 1,
+          impactedNodes: [
+            {
+              new_rect: [0, 0, 200, 200],
+              node_id: 60,
+              old_rect: [0, 0, 200, 100],
+            },
+            {
+              new_rect: [0, 300, 200, 200],
+              node_id: 25,
+              old_rect: [0, 100, 200, 100],
+            },
+          ],
+        },
+        {
+          ts: 2_000_000,
+          isMainFrame: true,
+          weightedScore: 0.3,
+          impactedNodes: [
+            {
+              new_rect: [0, 100, 200, 200],
+              node_id: 60,
+              old_rect: [0, 0, 200, 200],
+            },
+          ],
+        },
+      ];
+
+      const impactByNodeId = CumulativeLayoutShift.getImpactByNodeId(layoutShiftEvents);
+      expect(Array.from(impactByNodeId.entries())).toEqual([
+        [60, 0.7],
+        [25, 0.6],
+      ]);
+    });
+
+    it('ignores events with no impacted nodes', () => {
+      const layoutShiftEvents = [
+        {
+          ts: 1_000_000,
+          isMainFrame: true,
+          weightedScore: 1,
+          impactedNodes: [
+            {
+              new_rect: [0, 0, 200, 200],
+              node_id: 60,
+              old_rect: [0, 0, 200, 100],
+            },
+            {
+              new_rect: [0, 300, 200, 200],
+              node_id: 25,
+              old_rect: [0, 100, 200, 100],
+            },
+          ],
+        },
+        {
+          ts: 2_000_000,
+          isMainFrame: true,
+          weightedScore: 0.3,
+        },
+      ];
+
+      const impactByNodeId = CumulativeLayoutShift.getImpactByNodeId(layoutShiftEvents);
+      expect(Array.from(impactByNodeId.entries())).toEqual([
+        [60, 0.4],
+        [25, 0.6],
+      ]);
+    });
+
+    it('ignores malformed impacted nodes', () => {
+      const layoutShiftEvents = [
+        {
+          ts: 1_000_000,
+          isMainFrame: true,
+          weightedScore: 1,
+          impactedNodes: [
+            {
+              // Malformed, no old_rect
+              // Entire weightedScore is therefore attributed to node_id 25
+              new_rect: [0, 0, 200, 200],
+              node_id: 60,
+            },
+            {
+              new_rect: [0, 300, 200, 200],
+              node_id: 25,
+              old_rect: [0, 100, 200, 100],
+            },
+          ],
+        },
+        {
+          ts: 2_000_000,
+          isMainFrame: true,
+          weightedScore: 0.3,
+          impactedNodes: [
+            {
+              new_rect: [0, 100, 200, 200],
+              node_id: 60,
+              old_rect: [0, 0, 200, 200],
+            },
+          ],
+        },
+      ];
+
+      const impactByNodeId = CumulativeLayoutShift.getImpactByNodeId(layoutShiftEvents);
+      expect(Array.from(impactByNodeId.entries())).toEqual([
+        [25, 1],
+        [60, 0.3],
+      ]);
     });
   });
 });

@@ -1,6 +1,6 @@
 # Performance Budgets (budget.json)
 
-Use a [performance budget](https://web.dev/performance-budgets-101/) to assert thresholds for performance metrics. `budget.json` supports three types of budgets:
+Use a [performance budget](https://web.dev/articles/performance-budgets-101) to assert thresholds for performance metrics. `budget.json` supports three types of budgets:
 - Timing budgets: Assert thresholds for time-based performance metrics like First Contentful Paint, Maximum First Input Delay, and Speed Index.
 - Resource counts: Assert thresholds for the quantity of resources on a page. These thresholds can be defined per resource type or for the page overall.
 - Resource sizes: Assert thresholds for the transfer size of resources on a page. These thresholds can be defined per resource type or for the page overall.
@@ -167,7 +167,7 @@ Budgets can be set for the follow resource types.
 
 _Lighthouse 5.3 & up_
 
-The `path` property indciates the pages that a budget applies to. This string should follow the [robots.txt](https://developers.google.com/search/reference/robots_txt#examples-of-valid-robotstxt-urls) format.
+The `path` property indicates the pages that a budget applies to. This string should follow the [robots.txt](https://developers.google.com/search/reference/robots_txt#examples-of-valid-robotstxt-urls) format.
 
 If `path` is not supplied, a budget will apply to all pages.
 
@@ -208,7 +208,7 @@ Examples:
 ```
 "firstPartyHostnames": ["pets.com"]
 ```
-Result: pets.com is considerated first-party, but fishes.pets.com is not.
+Result: pets.com is considered first-party, but fishes.pets.com is not.
 
 ```
 "firstPartyHostnames": ["*.pets.com"]

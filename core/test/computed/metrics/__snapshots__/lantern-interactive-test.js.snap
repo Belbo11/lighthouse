@@ -2,9 +2,9 @@
 
 exports[`Metrics: Lantern TTI should compute predicted value 1`] = `
 Object {
-  "optimistic": 4177,
-  "pessimistic": 4233,
-  "timing": 4205,
+  "optimistic": 4178,
+  "pessimistic": 4234,
+  "timing": 4206,
 }
 `;
 

@@ -17,7 +17,6 @@ import {
   selectDevice,
   selectMode,
   setThrottlingMethod,
-  unregisterAllServiceWorkers,
   waitForResult,
   waitForTimespanStarted,
 } from '../helpers/lighthouse-helpers.js';
@@ -27,7 +26,9 @@ import {
 
 describe('Timespan', async function() {
   // The tests in this suite are particularly slow
-  this.timeout(60_000);
+  if (this.timeout() !== 0) {
+    this.timeout(60_000);
+  }
 
   beforeEach(() => {
     // https://github.com/GoogleChrome/lighthouse/issues/14572
@@ -41,10 +42,6 @@ describe('Timespan', async function() {
     expectError(/Protocol Error: the message with wrong session id/);
   });
 
-  afterEach(async () => {
-    await unregisterAllServiceWorkers();
-  });
-
   it('successfully returns a Lighthouse report for user interactions', async () => {
     await navigateToLighthouseTab('lighthouse/hello.html');
     await registerServiceWorker();
@@ -56,15 +53,25 @@ describe('Timespan', async function() {
     await setThrottlingMethod('simulate');
 
     let numNavigations = 0;
-    const {target} = await getBrowserAndPages();
+    const {target, frontend} = getBrowserAndPages();
     target.on('framenavigated', () => ++numNavigations);
 
     await clickStartButton();
     await waitForTimespanStarted();
 
+    await target.bringToFront();
+
     await target.click('button');
     await target.click('button');
     await target.click('button');
+
+    // Wait for content to be painted so that the INP event gets emitted.
+    // If we don't do this, `frontend.bringToFront()` can disable paints on the target page before INP is emitted.
+    await target.evaluate(() => {
+      return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+
+    await frontend.bringToFront();
 
     await endTimespan();
 
@@ -84,12 +91,12 @@ describe('Timespan', async function() {
     assert.strictEqual(devicePixelRatio, 1);
 
     const {auditResults, erroredAudits, failedAudits} = getAuditsBreakdown(lhr);
-    assert.strictEqual(auditResults.length, 46);
+    assert.strictEqual(auditResults.length, 48);
     assert.deepStrictEqual(erroredAudits, []);
     assert.deepStrictEqual(failedAudits.map(audit => audit.id), []);
 
     // Ensure the timespan captured the user interaction.
-    const interactionAudit = lhr.audits['experimental-interaction-to-next-paint'];
+    const interactionAudit = lhr.audits['interaction-to-next-paint'];
     assert.ok(interactionAudit.score);
     assert.ok(interactionAudit.numericValue);
     assert.strictEqual(interactionAudit.scoreDisplayMode, 'numeric');

@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2018 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2018 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {getProtoRoundTrip, readJson} from '../test-utils.js';
@@ -20,32 +20,10 @@ describe('processing for proto', () => {
   });
 
   it('keeps only necessary configSettings', () => {
+    const samplejson = JSON.parse(JSON.stringify(sampleJson));
+    const {configSettings} = samplejson;
     const input = {
-      'configSettings': {
-        'output': [
-          'json',
-        ],
-        'maxWaitForLoad': 45000,
-        'throttlingMethod': 'devtools',
-        'throttling': {
-          'rttMs': 150,
-          'throughputKbps': 1638.4,
-          'requestLatencyMs': 562.5,
-          'downloadThroughputKbps': 1474.5600000000002,
-          'uploadThroughputKbps': 675,
-          'cpuSlowdownMultiplier': 4,
-        },
-        'gatherMode': false,
-        'disableStorageReset': false,
-        'formFactor': 'mobile',
-        'locale': 'en-US',
-        'blockedUrlPatterns': null,
-        'additionalTraceCategories': null,
-        'extraHeaders': null,
-        'onlyAudits': null,
-        'onlyCategories': null,
-        'skipAudits': null,
-      },
+      configSettings,
     };
     const expectation = {
       'configSettings': {
@@ -57,6 +35,27 @@ describe('processing for proto', () => {
     const output = processForProto(input);
 
     expect(output).toMatchObject(expectation);
+    expect(Object.keys(output.configSettings)).toMatchInlineSnapshot(`
+Array [
+  "formFactor",
+  "locale",
+  "onlyCategories",
+  "channel",
+  "throttling",
+  "screenEmulation",
+  "throttlingMethod",
+]
+`);
+    // This must be correctly populated for appropriate report metablock rendering
+    expect(output.configSettings.screenEmulation).toMatchInlineSnapshot(`
+Object {
+  "deviceScaleFactor": 1.75,
+  "disabled": false,
+  "height": 823,
+  "mobile": true,
+  "width": 412,
+}
+`);
   });
 
   it('cleans up default runtimeErrors', () => {

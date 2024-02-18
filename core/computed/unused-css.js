@@ -1,12 +1,13 @@
 /**
- * @license Copyright 2019 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2019 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {makeComputedArtifact} from './computed-artifact.js';
-import {ByteEfficiencyAudit} from '../audits/byte-efficiency/byte-efficiency-audit.js';
 import {NetworkRecords} from './network-records.js';
+import {Util} from '../../shared/util.js';
+import {estimateCompressedContentSize} from '../lib/script-helpers.js';
 
 const PREVIEW_LENGTH = 100;
 
@@ -69,15 +70,15 @@ class UnusedCSS {
       usedUncompressedBytes += usedRule.endOffset - usedRule.startOffset;
     }
 
-    const totalTransferredBytes = ByteEfficiencyAudit.estimateTransferSize(
+    const compressedSize = estimateCompressedContentSize(
         stylesheetInfo.networkRecord, totalUncompressedBytes, 'Stylesheet');
     const percentUnused = (totalUncompressedBytes - usedUncompressedBytes) / totalUncompressedBytes;
-    const wastedBytes = Math.round(percentUnused * totalTransferredBytes);
+    const wastedBytes = Math.round(percentUnused * compressedSize);
 
     return {
       wastedBytes,
       wastedPercent: percentUnused * 100,
-      totalBytes: totalTransferredBytes,
+      totalBytes: compressedSize,
     };
   }
 
@@ -87,8 +88,7 @@ class UnusedCSS {
    * @return {string}
    */
   static determineContentPreview(content) {
-    let preview = (content || '')
-        .slice(0, PREVIEW_LENGTH * 5)
+    let preview = Util.truncate(content || '', PREVIEW_LENGTH * 5, '')
         .replace(/( {2,}|\t)+/g, '  ') // remove leading indentation if present
         .replace(/\n\s+}/g, '\n}') // completely remove indentation of closing braces
         .trim(); // trim the leading whitespace
@@ -101,16 +101,17 @@ class UnusedCSS {
           firstRuleStart > firstRuleEnd ||
           firstRuleStart > PREVIEW_LENGTH) {
         // We couldn't determine the first rule-set or it's not within the preview
-        preview = preview.slice(0, PREVIEW_LENGTH) + '...';
+        preview = Util.truncate(preview, PREVIEW_LENGTH);
       } else if (firstRuleEnd < PREVIEW_LENGTH) {
         // The entire first rule-set fits within the preview
-        preview = preview.slice(0, firstRuleEnd + 1) + ' ...';
+        preview = preview.slice(0, firstRuleEnd + 1) + ' …';
       } else {
         // The first rule-set doesn't fit within the preview, just show as many as we can
-        const lastSemicolonIndex = preview.slice(0, PREVIEW_LENGTH).lastIndexOf(';');
+        const truncated = Util.truncate(preview, PREVIEW_LENGTH, '');
+        const lastSemicolonIndex = truncated.lastIndexOf(';');
         preview = lastSemicolonIndex < firstRuleStart ?
-            preview.slice(0, PREVIEW_LENGTH) + '... } ...' :
-            preview.slice(0, lastSemicolonIndex + 1) + ' ... } ...';
+            truncated + '… } …' :
+            preview.slice(0, lastSemicolonIndex + 1) + ' … } …';
       }
     }
 

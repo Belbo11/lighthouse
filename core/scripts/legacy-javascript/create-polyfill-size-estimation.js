@@ -1,7 +1,6 @@
 /**
- * @license Copyright 2020 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license Copyright 2020 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /* eslint-disable no-console */
@@ -23,8 +22,6 @@
  * @property {Record<string, number[]>} dependencies indexed by the polyfill name. array of module indices
  * @property {number[]} moduleSizes indices in the arrays in `.dependencies` are for this array
  * @property {number} maxSize sum of `.moduleSizes`
- * @property {number} baseSize size of using core-js at all. sum of common modules, and does not show up
- *                             in `.dependencies` or `.moduleSizes`
 */
 
 import fs from 'fs';
@@ -34,11 +31,12 @@ import prettyJSONStringify from 'pretty-json-stringify';
 import {makeHash} from './hash.js';
 import LegacyJavascript from '../../audits/byte-efficiency/legacy-javascript.js';
 import {JSBundles} from '../../computed/js-bundles.js';
-import {LH_ROOT} from '../../../root.js';
+import {LH_ROOT} from '../../../shared/root.js';
 
 const hash = makeHash();
 const VARIANT_DIR = `${LH_ROOT}/core/scripts/legacy-javascript/variants/${hash}`;
 const OUTPUT_PATH = `${LH_ROOT}/core/audits/byte-efficiency/polyfill-graph-data.json`;
+const COMMON_MODULE = 'commonCoreJs';
 
 /**
  * @param {number[]} arr
@@ -55,7 +53,7 @@ function getPolyfillDependencies() {
   /** @type {Map<string, string[]>} */
   const polyfillDependencies = new Map();
 
-  for (const {name, coreJs3Module} of LegacyJavascript.getPolyfillData()) {
+  for (const {name, coreJs3Module} of LegacyJavascript.getCoreJsPolyfillData()) {
     const folder = coreJs3Module.replace(/[^a-zA-Z0-9]+/g, '-');
     const bundleMapPath =
       `${VARIANT_DIR}/core-js-3-only-polyfill/${folder}/main.bundle.min.js.map`;
@@ -64,20 +62,23 @@ function getPolyfillDependencies() {
     polyfillDependencies.set(name, bundleMap.sources.filter(s => s.startsWith('node_modules')));
   }
 
-  const allPolyfillModules = [...polyfillDependencies.values()];
-  const commonModules = allPolyfillModules[0].filter(potentialCommonModule => {
-    return allPolyfillModules.every(modules => modules.includes(potentialCommonModule));
-  });
-  for (const [name, modules] of polyfillDependencies.entries()) {
-    polyfillDependencies.set(name, modules.filter(module => !commonModules.includes(module)));
-  }
-  polyfillDependencies.set('common', commonModules);
-
   return polyfillDependencies;
 }
 
 async function main() {
   const polyfillDependencies = getPolyfillDependencies();
+
+  // Find the common modules amongst all the corejs polyfills, and replace with a singular
+  // common module to make the graph smaller.
+  const allCoreJsPolyfillModules = [...polyfillDependencies.values()];
+  const commonModules = allCoreJsPolyfillModules[0].filter(potentialCommonModule => {
+    return allCoreJsPolyfillModules.every(modules => modules.includes(potentialCommonModule));
+  });
+  for (const [name, modules] of polyfillDependencies.entries()) {
+    const modulesCommonFlattened = modules.filter(module => !commonModules.includes(module));
+    modulesCommonFlattened.unshift(COMMON_MODULE);
+    polyfillDependencies.set(name, modulesCommonFlattened);
+  }
 
   const bundlePath =
     `${VARIANT_DIR}/all-legacy-polyfills/all-legacy-polyfills-core-js-3/main.bundle.min.js`;
@@ -97,23 +98,26 @@ async function main() {
   const moduleSizes = allModules.map(module => {
     return bundleFileSizes[module];
   });
+  allModules.unshift(COMMON_MODULE);
+  moduleSizes.unshift(sum(commonModules.map(m => bundleFileSizes[m])));
 
   /** @type {Record<string, number[]>} */
   const polyfillDependenciesEncoded = {};
   for (const [name, modules] of polyfillDependencies.entries()) {
-    if (name === 'common') continue;
     polyfillDependenciesEncoded[name] = modules.map(module => allModules.indexOf(module));
   }
 
+  // For now, hardcode non-corejs polyfills.
+  moduleSizes.push(3000);
+  polyfillDependenciesEncoded['focus-visible'] = [moduleSizes.length - 1];
+
   const maxSize = sum(moduleSizes);
-  const baseSize = sum((polyfillDependencies.get('common') || []).map(m => bundleFileSizes[m]));
 
   /** @type {PolyfillSizeEstimator} */
   const polyfillDependencyGraphData = {
     moduleSizes,
     dependencies: polyfillDependenciesEncoded,
     maxSize,
-    baseSize,
   };
 
   const json = prettyJSONStringify(polyfillDependencyGraphData, {

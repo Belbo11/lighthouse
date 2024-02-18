@@ -1,15 +1,13 @@
 /**
- * @license Copyright 2017 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {Audit} from './audit.js';
-import {ByteEfficiencyAudit} from './byte-efficiency/byte-efficiency-audit.js';
 import * as i18n from '../lib/i18n/i18n.js';
 import {ProcessedTrace} from '../computed/processed-trace.js';
 import {NetworkRecords} from '../computed/network-records.js';
-import {MainResource} from '../computed/main-resource.js';
 import {LanternInteractive} from '../computed/metrics/lantern-interactive.js';
 
 const UIStrings = {
@@ -30,8 +28,9 @@ class Redirects extends Audit {
       id: 'redirects',
       title: str_(UIStrings.title),
       description: str_(UIStrings.description),
-      scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
+      scoreDisplayMode: Audit.SCORING_MODES.METRIC_SAVINGS,
       supportedModes: ['navigation'],
+      guidanceLevel: 2,
       requiredArtifacts: ['URL', 'GatherContext', 'devtoolsLogs', 'traces'],
     };
   }
@@ -40,19 +39,19 @@ class Redirects extends Audit {
    * This method generates the document request chain including client-side and server-side redirects.
    *
    * Example:
-   *    GET /initialUrl => 302 /firstRedirect
+   *    GET /requestedUrl => 302 /firstRedirect
    *    GET /firstRedirect => 200 /firstRedirect, window.location = '/secondRedirect'
    *    GET /secondRedirect => 302 /thirdRedirect
-   *    GET /thirdRedirect => 200 /mainDocumentUrl
+   *    GET /thirdRedirect => 302 /mainDocumentUrl
+   *    GET /mainDocumentUrl => 200 /mainDocumentUrl
    *
-   * Returns network records [/initialUrl, /firstRedirect, /secondRedirect, /thirdRedirect, /mainDocumentUrl]
+   * Returns network records [/requestedUrl, /firstRedirect, /secondRedirect, /thirdRedirect, /mainDocumentUrl]
    *
-   * @param {LH.Artifacts.NetworkRequest} mainResource
    * @param {Array<LH.Artifacts.NetworkRequest>} networkRecords
    * @param {LH.Artifacts.ProcessedTrace} processedTrace
    * @return {Array<LH.Artifacts.NetworkRequest>}
    */
-  static getDocumentRequestChain(mainResource, networkRecords, processedTrace) {
+  static getDocumentRequestChain(networkRecords, processedTrace) {
     /** @type {Array<LH.Artifacts.NetworkRequest>} */
     const documentRequests = [];
 
@@ -63,18 +62,19 @@ class Redirects extends Audit {
       const data = event.args.data || {};
       if (!data.documentLoaderURL || !data.isLoadingMainFrame) continue;
 
-      let networkRecord = networkRecords.find(record => record.url === data.documentLoaderURL);
+      let networkRecord = networkRecords.find(record => record.requestId === data.navigationId);
       while (networkRecord) {
         documentRequests.push(networkRecord);
+        // HTTP redirects won't have separate navStarts, so find through the redirect chain.
         networkRecord = networkRecord.redirectDestination;
       }
     }
 
-    // If we found documents in the trace, just use this directly.
-    if (documentRequests.length) return documentRequests;
+    if (!documentRequests.length) {
+      throw new Error('No navigation requests found');
+    }
 
-    // Use the main resource as a backup if we didn't find any modern navigationStart events
-    return (mainResource.redirects || []).concat(mainResource);
+    return documentRequests;
   }
 
   /**
@@ -90,21 +90,19 @@ class Redirects extends Audit {
 
     const processedTrace = await ProcessedTrace.request(trace, context);
     const networkRecords = await NetworkRecords.request(devtoolsLog, context);
-    const mainResource = await MainResource.request({URL: artifacts.URL, devtoolsLog}, context);
 
     const metricComputationData = {trace, devtoolsLog, gatherContext, settings, URL: artifacts.URL};
     const metricResult = await LanternInteractive.request(metricComputationData, context);
 
     /** @type {Map<string, LH.Gatherer.Simulation.NodeTiming>} */
-    const nodeTimingsByUrl = new Map();
+    const nodeTimingsById = new Map();
     for (const [node, timing] of metricResult.pessimisticEstimate.nodeTimings.entries()) {
       if (node.type === 'network') {
-        nodeTimingsByUrl.set(node.record.url, timing);
+        nodeTimingsById.set(node.record.requestId, timing);
       }
     }
 
-    const documentRequests = Redirects.getDocumentRequestChain(
-      mainResource, networkRecords, processedTrace);
+    const documentRequests = Redirects.getDocumentRequestChain(networkRecords, processedTrace);
 
     let totalWastedMs = 0;
     const tableRows = [];
@@ -118,8 +116,8 @@ class Redirects extends Audit {
       const initialRequest = documentRequests[i];
       const redirectedRequest = documentRequests[i + 1] || initialRequest;
 
-      const initialTiming = nodeTimingsByUrl.get(initialRequest.url);
-      const redirectedTiming = nodeTimingsByUrl.get(redirectedRequest.url);
+      const initialTiming = nodeTimingsById.get(initialRequest.requestId);
+      const redirectedTiming = nodeTimingsById.get(redirectedRequest.requestId);
       if (!initialTiming || !redirectedTiming) {
         throw new Error('Could not find redirects in graph');
       }
@@ -146,16 +144,17 @@ class Redirects extends Audit {
       {overallSavingsMs: totalWastedMs});
 
     return {
-      // We award a passing grade if you only have 1 redirect
-      // TODO(phulce): reconsider if cases like the example in https://github.com/GoogleChrome/lighthouse/issues/8984
-      // should fail this audit.
-      score: documentRequests.length <= 2 ? 1 : ByteEfficiencyAudit.scoreForWastedMs(totalWastedMs),
+      score: tableRows.length ? 0 : 1,
       numericValue: totalWastedMs,
       numericUnit: 'millisecond',
       displayValue: totalWastedMs ?
         str_(i18n.UIStrings.displayValueMsSavings, {wastedMs: totalWastedMs}) :
         '',
       details,
+      metricSavings: {
+        LCP: totalWastedMs,
+        FCP: totalWastedMs,
+      },
     };
   }
 }

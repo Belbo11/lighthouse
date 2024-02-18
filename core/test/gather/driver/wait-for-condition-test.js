@@ -1,21 +1,20 @@
 /**
- * @license Copyright 2020 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2020 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
+
+import log from 'lighthouse-logger';
 
 import * as wait from '../../../gather/driver/wait-for-condition.js';
 import {
-  mockCommands,
   makePromiseInspectable,
   flushAllTimersAndMicrotasks,
   createDecomposedPromise,
   fnAny,
   timers,
 } from '../../test-utils.js';
-
-const {createMockOnceFn} = mockCommands;
-
+import {createMockSession} from '../mock-driver.js';
 
 function createMockWaitForFn() {
   const {promise, resolve, reject} = createDecomposedPromise();
@@ -63,7 +62,7 @@ describe('waitForFullyLoaded()', () => {
 
   beforeEach(() => {
     session = {sendCommand: fnAny().mockResolvedValue(), setNextProtocolTimeout: fnAny()};
-    networkMonitor = {};
+    networkMonitor = {getInflightRequests: fnAny().mockReturnValue([])};
 
     const overrides = {
       waitForFcp: createMockWaitForFn(),
@@ -179,10 +178,17 @@ describe('waitForFullyLoaded()', () => {
     expect(await loadPromise).toMatchObject({timedOut: false});
   });
 
-  it('should timeout when not resolved fast enough', async () => {
+  it('should timeout and warn when not resolved fast enough', async () => {
     options._waitForTestOverrides.waitForLoadEvent = createMockWaitForFn();
     options._waitForTestOverrides.waitForNetworkIdle = createMockWaitForFn();
     options._waitForTestOverrides.waitForCPUIdle = createMockWaitForFn();
+    networkMonitor.getInflightRequests.mockReturnValue([{url: 'https://example.com'}]);
+
+    /** @type {Array<unknown>} */
+    const warnings = [];
+    /** @param {unknown} evt */
+    const saveWarning = evt => warnings.push(evt);
+    log.events.on('warning', saveWarning);
 
     const loadPromise = makePromiseInspectable(wait.waitForFullyLoaded(
       session,
@@ -203,6 +209,22 @@ describe('waitForFullyLoaded()', () => {
     expect(options._waitForTestOverrides.waitForLoadEvent.getMockCancelFn()).toHaveBeenCalled();
     expect(options._waitForTestOverrides.waitForNetworkIdle.getMockCancelFn()).toHaveBeenCalled();
     expect(options._waitForTestOverrides.waitForCPUIdle.getMockCancelFn()).toHaveBeenCalled();
+    // Check for warn logs
+    log.events.off('warning', saveWarning);
+    expect(warnings).toEqual([
+      [
+        'waitFor',
+        'Timed out waiting for page load. Checking if page is hung...',
+      ],
+      [
+        'waitFor',
+        'Remaining inflight requests URLs',
+        [
+          'https://example.com',
+        ],
+      ],
+    ]);
+
     expect(await loadPromise).toMatchObject({timedOut: true});
   });
 
@@ -231,18 +253,11 @@ describe('waitForFcp()', () => {
   let session;
 
   beforeEach(() => {
-    session = {
-      on: fnAny(),
-      once: fnAny(),
-      off: fnAny(),
-      sendCommand: fnAny(),
-    };
+    session = createMockSession();
   });
 
 
   it('should not resolve until FCP fires', async () => {
-    session.on = session.once = createMockOnceFn();
-
     const waitPromise = makePromiseInspectable(wait.waitForFcp(session, 0, 60 * 1000).promise);
     const listener = session.on.findListener('Page.lifecycleEvent');
 
@@ -260,8 +275,6 @@ describe('waitForFcp()', () => {
   });
 
   it('should wait for pauseAfterFcpMs after FCP', async () => {
-    session.on = session.once = createMockOnceFn();
-
     const waitPromise = makePromiseInspectable(wait.waitForFcp(session, 5000, 60 * 1000).promise);
     const listener = session.on.findListener('Page.lifecycleEvent');
 
@@ -280,8 +293,6 @@ describe('waitForFcp()', () => {
   });
 
   it('should timeout', async () => {
-    session.on = session.once = createMockOnceFn();
-
     const waitPromise = makePromiseInspectable(wait.waitForFcp(session, 0, 5000).promise);
 
     await flushAllTimersAndMicrotasks();
@@ -294,9 +305,6 @@ describe('waitForFcp()', () => {
   });
 
   it('should be cancellable', async () => {
-    session.on = session.once = createMockOnceFn();
-    session.off = fnAny();
-
     const {promise: rawPromise, cancel} = wait.waitForFcp(session, 0, 5000);
     const waitPromise = makePromiseInspectable(rawPromise);
 

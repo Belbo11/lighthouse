@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2016 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2016 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import assert from 'assert/strict';
@@ -9,18 +9,18 @@ import assert from 'assert/strict';
 import UserTimingsAudit from '../../audits/user-timings.js';
 import {readJson} from '../test-utils.js';
 
-const traceEvents = readJson('../fixtures/traces/trace-user-timings.json', import.meta);
+const trace = readJson('../fixtures/artifacts/user-timing/trace.json', import.meta);
 
 function generateArtifactsWithTrace(trace) {
   return {
     traces: {
-      defaultPass: {traceEvents: Array.isArray(trace) ? trace : trace.traceEvents},
+      defaultPass: trace,
     },
   };
 }
 describe('Performance: user-timings audit', () => {
   it('evaluates valid input correctly', () => {
-    const artifacts = generateArtifactsWithTrace(traceEvents);
+    const artifacts = generateArtifactsWithTrace(trace);
     return UserTimingsAudit.audit(artifacts, {computedCache: new Map()}).then(auditResult => {
       const excludedUTs = auditResult.details.items.filter(timing => {
         return UserTimingsAudit.excludedPrefixes.some(prefix => timing.name.startsWith(prefix));
@@ -28,38 +28,27 @@ describe('Performance: user-timings audit', () => {
       assert.equal(excludedUTs.length, 0, 'excluded usertimings included in results');
 
       assert.equal(auditResult.score, 0);
-      expect(auditResult.displayValue).toBeDisplayString('2 user timings');
+      expect(auditResult.displayValue).toBeDisplayString('4 user timings');
 
-      assert.equal(auditResult.details.items[0].name, 'measure_test');
+      assert.equal(auditResult.details.items[0].name, 'fetch-end');
       assert.equal(auditResult.details.items[0].timingType, 'Measure');
-      assert.equal(auditResult.details.items[0].startTime, 0.002);
-      assert.equal(auditResult.details.items[0].duration, 1000.965);
+      expect(auditResult.details.items[0].startTime).toMatchInlineSnapshot(`1597.565`);
+      expect(auditResult.details.items[0].duration).toMatchInlineSnapshot(`6.7`);
 
-      assert.equal(auditResult.details.items[1].name, 'mark_test');
+      assert.equal(auditResult.details.items[1].name, 'start');
       assert.equal(auditResult.details.items[1].timingType, 'Mark');
-      assert.equal(auditResult.details.items[1].startTime, 1000.954);
+      expect(auditResult.details.items[1].startTime).toMatchInlineSnapshot(`688.369`);
       assert.equal(auditResult.details.items[1].duration, undefined);
+
+      assert.equal(auditResult.details.items[2].name, 'fetch-start');
+      assert.equal(auditResult.details.items[2].timingType, 'Mark');
+      expect(auditResult.details.items[2].startTime).toMatchInlineSnapshot(`1604.267`);
+      assert.equal(auditResult.details.items[2].duration, undefined);
     });
   });
 
   it('doesn\'t throw when user_timing events have a colon', () => {
-    const extraTraceEvents = traceEvents.concat([
-      {
-        'pid': 41904,
-        'tid': 1295,
-        'ts': 1676836141,
-        'ph': 'R',
-        'id': 'fake-event',
-        'cat': 'blink.user_timing',
-        'name': 'Zone:ZonePromise',
-        'dur': 64,
-        'tdur': 61,
-        'tts': 881373,
-        'args': {},
-      },
-    ]);
-
-    const artifacts = generateArtifactsWithTrace(extraTraceEvents);
+    const artifacts = generateArtifactsWithTrace(trace);
     return UserTimingsAudit.audit(artifacts, {computedCache: new Map()}).then(result => {
       const fakeEvt = result.details.items.find(item => item.name === 'Zone:ZonePromise');
       assert.ok(fakeEvt, 'failed to find user timing item with colon');

@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2023 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2023 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {Util} from '../../shared/util.js';
@@ -34,6 +34,10 @@ function upgradeLhrForCompatibility(lhr) {
     // eslint-disable-next-line max-len
     if (audit.scoreDisplayMode === 'not_applicable' || audit.scoreDisplayMode === 'not-applicable') {
       audit.scoreDisplayMode = 'notApplicable';
+    }
+
+    if (audit.scoreDisplayMode === 'informative') {
+      audit.score = 1;
     }
 
     if (audit.details) {
@@ -81,6 +85,23 @@ function upgradeLhrForCompatibility(lhr) {
         }
       }
 
+      // In 10.0, third-party-summary deprecated entity: LinkValue and switched to entity name string
+      if (audit.id === 'third-party-summary') {
+        if (audit.details.type === 'opportunity' || audit.details.type === 'table') {
+          const {headings, items} = audit.details;
+          if (headings[0].valueType === 'link') {
+            // Apply upgrade only if we are dealing with an older version (valueType=link marker).
+            headings[0].valueType = 'text';
+            for (const item of items) {
+              if (typeof item.entity === 'object' && item.entity.type === 'link') {
+                item.entity = item.entity.text;
+              }
+            }
+            audit.details.isEntityGrouped = true;
+          }
+        }
+      }
+
       // TODO: convert printf-style displayValue.
       // Added:   #5099, v3
       // Removed: #6767, v4
@@ -106,12 +127,20 @@ function upgradeLhrForCompatibility(lhr) {
 
   // Add some minimal stuff so older reports still work.
   if (!lhr.environment) {
-    // @ts-expect-error
-    lhr.environment = {benchmarkIndex: 0};
+    lhr.environment = {
+      benchmarkIndex: 0,
+      networkUserAgent: lhr.userAgent,
+      hostUserAgent: lhr.userAgent,
+    };
   }
   if (!lhr.configSettings.screenEmulation) {
-    // @ts-expect-error
-    lhr.configSettings.screenEmulation = {};
+    lhr.configSettings.screenEmulation = {
+      width: -1,
+      height: -1,
+      deviceScaleFactor: -1,
+      mobile: /mobile/i.test(lhr.environment.hostUserAgent),
+      disabled: false,
+    };
   }
   if (!lhr.i18n) {
     // @ts-expect-error

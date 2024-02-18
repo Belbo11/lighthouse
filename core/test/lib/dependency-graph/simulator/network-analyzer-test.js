@@ -1,7 +1,7 @@
 /**
- * @license Copyright 2018 The Lighthouse Authors. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ * @license
+ * Copyright 2018 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import assert from 'assert/strict';
@@ -11,9 +11,13 @@ import {NetworkRecords} from '../../../../computed/network-records.js';
 import {readJson} from '../../../test-utils.js';
 
 const devtoolsLog = readJson('../../../fixtures/traces/progressive-app-m60.devtools.log.json', import.meta);
-const devtoolsLogWithRedirect = readJson('../../../fixtures/traces/site-with-redirect.devtools.log.json', import.meta);
+const devtoolsLogWithRedirect = readJson('../../../fixtures/artifacts/redirect/devtoolslog.json', import.meta);
 
 describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
+  afterEach(() => {
+    global.isLightrider = undefined;
+  });
+
   let recordId;
 
   function createRecord(opts) {
@@ -29,7 +33,7 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
         networkRequestTime: 10,
         networkEndTime: 10,
         transferSize: 0,
-        protocol: 'http/1.1',
+        protocol: opts.protocol || 'http/1.1',
         parsedURL: {scheme: url.match(/https?/)[0], securityOrigin: url.match(/.*\.com/)[0]},
         timing: opts.timing || null,
       },
@@ -136,8 +140,33 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
 
   describe('#estimateRTTByOrigin', () => {
     it('should infer from tcp timing when available', () => {
-      const timing = {connectStart: 1, connectEnd: 100};
+      const timing = {connectStart: 0, connectEnd: 99};
       const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
+      const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
+      const expected = {min: 99, max: 99, avg: 99, median: 99};
+      assert.deepStrictEqual(result.get('https://example.com'), expected);
+    });
+
+    it('should infer only one estimate if tcp and ssl start times are equal', () => {
+      const timing = {connectStart: 0, connectEnd: 99, sslStart: 0, sslEnd: 99};
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
+      const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
+      const expected = {min: 99, max: 99, avg: 99, median: 99};
+      assert.deepStrictEqual(result.get('https://example.com'), expected);
+    });
+
+    it('should infer from tcp and ssl timing when available', () => {
+      const timing = {connectStart: 0, connectEnd: 99, sslStart: 50, sslEnd: 99};
+      const record = createRecord({networkRequestTime: 0, networkEndTime: 1, timing});
+      const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
+      const expected = {min: 49, max: 50, avg: 49.5, median: 49.5};
+      assert.deepStrictEqual(result.get('https://example.com'), expected);
+    });
+
+    it('should infer from connection timing when available for h3 (one estimate)', () => {
+      const timing = {connectStart: 0, connectEnd: 99, sslStart: 1, sslEnd: 99};
+      const record =
+        createRecord({networkRequestTime: 0, networkEndTime: 1, timing, protocol: 'h3'});
       const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
       const expected = {min: 99, max: 99, avg: 99, median: 99};
       assert.deepStrictEqual(result.get('https://example.com'), expected);
@@ -185,6 +214,16 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
       assert.deepStrictEqual(result.get('https://example.com'), expected);
     });
 
+    it('should use coarse estimates on a per-origin basis', () => {
+      const records = [
+        createRecord({url: 'https://example.com', timing: {connectStart: 1, connectEnd: 100, sendStart: 150}}),
+        createRecord({url: 'https://example2.com', timing: {sendStart: 150}}),
+      ];
+      const result = NetworkAnalyzer.estimateRTTByOrigin(records);
+      assert.deepStrictEqual(result.get('https://example.com'), {min: 99, max: 99, avg: 99, median: 99});
+      assert.deepStrictEqual(result.get('https://example2.com'), {min: 15, max: 15, avg: 15, median: 15});
+    });
+
     it('should handle untrustworthy connection information', () => {
       const timing = {sendStart: 150};
       const recordA = createRecord({networkRequestTime: 0, networkEndTime: 1, timing,
@@ -222,6 +261,22 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
         assertCloseEnough(result.avg, resultApprox.avg, 30);
         assertCloseEnough(result.median, resultApprox.median, 30);
       });
+    });
+
+    it('should use lrStatistics when needed', () => {
+      global.isLightrider = true;
+      const record = createRecord({timing: {}, lrStatistics: {TCPMs: 100}});
+      const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
+      const expected = {min: 50, max: 50, avg: 50, median: 50};
+      assert.deepStrictEqual(result.get('https://example.com'), expected);
+    });
+
+    it('should use lrStatistics when needed (h3)', () => {
+      global.isLightrider = true;
+      const record = createRecord({protocol: 'h3', timing: {}, lrStatistics: {TCPMs: 100}});
+      const result = NetworkAnalyzer.estimateRTTByOrigin([record]);
+      const expected = {min: 100, max: 100, avg: 100, median: 100};
+      assert.deepStrictEqual(result.get('https://example.com'), expected);
     });
   });
 
@@ -273,6 +328,14 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
         assertCloseEnough(result.avg, resultApprox.avg, 30);
         assertCloseEnough(result.median, resultApprox.median, 30);
       });
+    });
+
+    it('should use lrStatistics when needed', () => {
+      global.isLightrider = true;
+      const record = createRecord({timing: {}, lrStatistics: {requestMs: 100}});
+      const result = NetworkAnalyzer.estimateServerResponseTimeByOrigin([record]);
+      const expected = {min: 100, max: 100, avg: 100, median: 100};
+      assert.deepStrictEqual(result.get('https://example.com'), expected);
     });
   });
 
